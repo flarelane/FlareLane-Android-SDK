@@ -1,0 +1,58 @@
+package com.flarelane;
+
+import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
+import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+class ActivityLifecycleManager {
+    private boolean isActivated = false;
+    protected Application.ActivityLifecycleCallbacks mActivityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
+        @Override
+        public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+            if (isActivated == false) {
+                Context context = activity.getApplicationContext();
+                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
+                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
+                String pushToken = com.flarelane.BaseSharedPreferences.getPushToken(context);
+
+                if (projectId != null && deviceId != null && pushToken != null) {
+                    try {
+                        com.flarelane.DeviceService.activate(activity.getApplicationContext(), projectId, deviceId, pushToken);
+                    } catch (Exception e) {
+                        BaseErrorHandler.handle(e);
+                    }
+                    isActivated = true;
+                    com.flarelane.Logger.verbose("App is activated");
+                }
+            }
+        }
+
+        @Override
+        public void onActivityStarted(@NonNull Activity activity) {
+        }
+
+        @Override
+        public void onActivityResumed(@NonNull Activity activity) {
+        }
+
+        @Override
+        public void onActivityPaused(@NonNull Activity activity) {
+        }
+
+        @Override
+        public void onActivityStopped(@NonNull Activity activity) {
+        }
+
+        @Override
+        public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
+        }
+
+        @Override
+        public void onActivityDestroyed(@NonNull Activity activity) {
+        }
+    };
+}

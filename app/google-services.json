@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "801683980310",
+    "project_id": "flarelane-example",
+    "storage_bucket": "flarelane-example.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:801683980310:android:dbaf0d909a72d3b03ff537",
+        "android_client_info": {
+          "package_name": "com.flarelane.example"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "801683980310-k1bk6km2l5fsfnrd35q3qc8euqigvajt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFbmwhDnlt-F4nAFdtdFB6InpREnEMEz4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "801683980310-k1bk6km2l5fsfnrd35q3qc8euqigvajt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,3 @@
+rootProject.name = "FlareLane-Android-SDK"
+include ':app'
+include ':FlareLane'
