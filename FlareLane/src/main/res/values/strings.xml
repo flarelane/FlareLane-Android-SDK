@@ -2,5 +2,5 @@
 <resources>
     <string name="default_notification_channel_id">com.flarelane.default_notification_channel_id</string>
     <string name="default_notification_channel_name">Default</string>
-    <string name="sdk_version">1.0.0</string>
+    <string name="sdk_version">1.0.1</string>
 </resources>
