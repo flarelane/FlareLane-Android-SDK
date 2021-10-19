@@ -116,13 +116,10 @@ class HTTPClient {
         String response = convertStreamToString(in);
         JSONObject json = new JSONObject(response);
 
-        switch (responseCode) {
-            case HttpURLConnection.HTTP_CREATED:
-            case HttpURLConnection.HTTP_OK:
-                responseHandler.onSuccess(responseCode, json);
-                break;
-            default:
-                responseHandler.onFailure(responseCode, json);
+        if (responseCode >= 200 && responseCode < 400) {
+            responseHandler.onSuccess(responseCode, json);
+        } else {
+            responseHandler.onFailure(responseCode, json);
         }
     }
 
