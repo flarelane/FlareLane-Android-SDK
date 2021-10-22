@@ -42,6 +42,11 @@ public class FlareLane {
             RemoteParamsManager.fetchRemoteParams(projectId, new RemoteParamsManager.ResponseHandler() {
                 @Override
                 public void onSuccess(RemoteParams remoteParams) {
+                    if (remoteParams.senderId == null) {
+                        Logger.error("senderId is null. Please check a property of your project");
+                        return;
+                    }
+
                     String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
                     String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context);
 
