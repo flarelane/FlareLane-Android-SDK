@@ -54,6 +54,12 @@ public class MessagingService extends FirebaseMessagingService {
             if (remoteMessage.getData().size() > 0) {
                 com.flarelane.Logger.verbose("Message data payload: " + remoteMessage.getData());
 
+                String isFlareLane = remoteMessage.getData().get("isFlareLane");
+                if (isFlareLane == null || !isFlareLane.contentEquals("true")) {
+                    Logger.verbose("It is not a message of FlareLane");
+                    return;
+                }
+
                 String notificationId = remoteMessage.getData().get("notificationId");
                 String title = remoteMessage.getData().get("title");
                 String body = remoteMessage.getData().get("body");
