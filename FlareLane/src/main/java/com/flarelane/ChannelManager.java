@@ -19,6 +19,7 @@ class ChannelManager {
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(getChannelId(context), getChannelName(context), NotificationManager.IMPORTANCE_HIGH);
+            channel.setShowBadge(false);
             // Register the channel with the system; you can't change the importance
             // or other notification behaviors after this
             NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
