@@ -60,23 +60,28 @@ public class MessagingService extends FirebaseMessagingService {
                     return;
                 }
 
-                String notificationId = remoteMessage.getData().get("notificationId");
-                String title = remoteMessage.getData().get("title");
-                String body = remoteMessage.getData().get("body");
-                String url = remoteMessage.getData().get("url");
-                String type = isForeground ? EventType.ForegroundReceived : EventType.BackgroundReceived;
+                com.flarelane.Notification flarelaneNotification = new com.flarelane.Notification(
+                        remoteMessage.getData().get("notificationId"),
+                        remoteMessage.getData().get("body"),
+                        remoteMessage.getData().get("title"),
+                        remoteMessage.getData().get("url")
+                );
 
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
                 String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(this.getApplicationContext());
 
-                com.flarelane.EventService.create(projectId, deviceId, notificationId, type);
+                if (isForeground) {
+                    EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
+                } else {
+                    EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
+                }
 
                 Intent intent = new Intent(this.getApplicationContext(), NotificationConvertedActivity.class)
                         .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        .putExtra("title", title)
-                        .putExtra("body", body)
-                        .putExtra("url", url)
-                        .putExtra("notificationId", notificationId);
+                        .putExtra("title", flarelaneNotification.title)
+                        .putExtra("body", flarelaneNotification.body)
+                        .putExtra("url", flarelaneNotification.url)
+                        .putExtra("notificationId", flarelaneNotification.id);
                 PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
                 int currentIcon = getPackageManager().getApplicationInfo(this.getPackageName(), PackageManager.GET_META_DATA).icon;
@@ -84,8 +89,8 @@ public class MessagingService extends FirebaseMessagingService {
 
                 Notification notification = new NotificationCompat.Builder(this.getApplicationContext(), ChannelManager.getChannelId(this.getApplicationContext()))
                         .setSmallIcon(android.R.drawable.ic_menu_info_details)
-                        .setContentText(body)
-                        .setContentTitle(title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : title)
+                        .setContentText(flarelaneNotification.body)
+                        .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
                         .setAutoCancel(true)
                         .setContentIntent(contentIntent)
                         .setPriority(NotificationCompat.PRIORITY_MAX)

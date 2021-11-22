@@ -104,6 +104,11 @@ public class FlareLane {
     public static void setNotificationConvertedHandler(com.flarelane.NotificationConvertedHandler notificationConvertedHandler) {
         try {
             FlareLane.notificationConvertedHandler = notificationConvertedHandler;
+
+            if (EventService.unhandledConvertedNotification != null) {
+                notificationConvertedHandler.onConverted(EventService.unhandledConvertedNotification);
+                EventService.unhandledConvertedNotification = null;
+            }
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }

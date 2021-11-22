@@ -18,17 +18,14 @@ public class NotificationConvertedActivity extends Activity {
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
                 String deviceId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
 
-                com.flarelane.EventService.create(projectId, deviceId, notificationId, com.flarelane.EventType.Converted);
+                com.flarelane.Notification notification = new com.flarelane.Notification(
+                        notificationId,
+                        getIntent().getStringExtra("body"),
+                        getIntent().getStringExtra("title"),
+                        getIntent().getStringExtra("url")
+                );
 
-                if (com.flarelane.FlareLane.notificationConvertedHandler != null) {
-                    com.flarelane.Notification notification = new com.flarelane.Notification(
-                            notificationId,
-                            getIntent().getStringExtra("body"),
-                            getIntent().getStringExtra("title"),
-                            getIntent().getStringExtra("url")
-                    );
-                    com.flarelane.FlareLane.notificationConvertedHandler.onConverted(notification);
-                }
+                EventService.createConverted(projectId, deviceId, notification);
 
                 startLaunchActivityIfNoHistory();
             }
