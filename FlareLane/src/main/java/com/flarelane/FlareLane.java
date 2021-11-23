@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 public class FlareLane {
     protected static String sdkVersion = "";
+    public static SdkType sdkType = SdkType.NATIVE;
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
