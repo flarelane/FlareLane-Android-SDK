@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import static com.flarelane.FlareLane.sdkType;
 import static com.flarelane.FlareLane.sdkVersion;
 
 class DeviceService {
@@ -26,6 +27,7 @@ class DeviceService {
         data.put("timeZone", TimeZone.getDefault().getID());
         data.put("languageCode", Locale.getDefault().getLanguage());
         data.put("countryCode", Locale.getDefault().getCountry());
+        data.put("sdkType", sdkType.toString());
 
         return data;
     }
