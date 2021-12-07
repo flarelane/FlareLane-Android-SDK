@@ -1,7 +1,7 @@
 package com.flarelane;
 
-public class NullValueException extends Exception {
-    public NullValueException(String valueName) {
+class NullValueException extends Exception {
+    NullValueException(String valueName) {
         super(valueName + " is null");
     }
 }
