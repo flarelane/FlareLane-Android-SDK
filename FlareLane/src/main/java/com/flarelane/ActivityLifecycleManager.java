@@ -26,22 +26,19 @@ class ActivityLifecycleManager {
         @Override
         public void onActivityPaused(@NonNull Activity activity) {
 //            TODO: ReactNative 콜백 등록 타이밍 이슈로 Paused 시 activate 체크
-            if (isActivated == false) {
-                Context context = activity.getApplicationContext();
-                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
-                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
-                String pushToken = com.flarelane.BaseSharedPreferences.getPushToken(context);
+            try {
+                if (isActivated == false) {
+                    Context context = activity.getApplicationContext();
+                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+                    String pushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, false);
 
-                if (projectId != null && deviceId != null && pushToken != null) {
                     com.flarelane.Logger.verbose("App is activated");
                     isActivated = true;
-
-                    try {
-                        com.flarelane.DeviceService.activate(activity.getApplicationContext(), projectId, deviceId, pushToken);
-                    } catch (Exception e) {
-                        BaseErrorHandler.handle(e);
-                    }
+                    com.flarelane.DeviceService.activate(activity.getApplicationContext(), projectId, deviceId, pushToken);
                 }
+            } catch (Exception e) {
+                BaseErrorHandler.handle(e);
             }
         }
 

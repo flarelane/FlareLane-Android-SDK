@@ -32,7 +32,7 @@ public class FlareLane {
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
             // If projectId is null or different, reset savedDeviceId to null
-            String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
+            String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
             if (savedProjectId == null || !savedProjectId.contentEquals(projectId)) {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
             }
@@ -43,50 +43,59 @@ public class FlareLane {
             RemoteParamsManager.fetchRemoteParams(projectId, new RemoteParamsManager.ResponseHandler() {
                 @Override
                 public void onSuccess(RemoteParams remoteParams) {
-                    if (remoteParams.senderId == null) {
-                        Logger.error("senderId is null. Please check a property of your project");
-                        return;
+                    try {
+                        if (remoteParams.senderId == null) {
+                            Logger.error("senderId is null. Please check a property of your project");
+                            return;
+                        }
+
+                        String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+                        String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, true);
+
+                        Task<String> getTokenTask = FirebaseManager.getFirebaseMessaging(context, remoteParams.senderId).getToken();
+                        getTokenTask.addOnCompleteListener(new OnCompleteListener<String>() {
+                            @Override
+                            public void onComplete(@NonNull Task<String> task) {
+                                try {
+                                    if (!task.isSuccessful()) {
+                                        Logger.error("Fetching FCM registration token failed: " + task.getException());
+                                        return;
+                                    }
+
+                                    // Get new FCM registration token
+                                    String token = task.getResult();
+                                    if (token == null) {
+                                        com.flarelane.Logger.error("token is null");
+                                        return;
+                                    }
+
+                                    com.flarelane.Logger.verbose("FirebaseMessaging.getInstance().getToken() is Completed");
+
+                                    if (savedPushToken == null || !savedPushToken.contentEquals(token)) {
+                                        com.flarelane.Logger.verbose("new PushToken is saved");
+                                        com.flarelane.BaseSharedPreferences.setPushToken(context, token);
+                                    }
+
+                                    if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
+                                        com.flarelane.Logger.verbose("savedDeviceId is not exists, newly registered");
+                                        com.flarelane.DeviceService.register(context, projectId, token);
+                                    } else {
+                                        com.flarelane.Logger.verbose("savedDeviceId is exists : " + savedDeviceId);
+                                    }
+
+                                } catch (Exception e) {
+                                    com.flarelane.BaseErrorHandler.handle(e);
+                                }
+                            }
+                        });
+                    } catch (Exception e) {
+                        BaseErrorHandler.handle(e);
                     }
 
-                    String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
-                    String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context);
 
-                    Task<String> getTokenTask = FirebaseManager.getFirebaseMessaging(context, remoteParams.senderId).getToken();
-                    getTokenTask.addOnCompleteListener(new OnCompleteListener<String>() {
-                        @Override
-                        public void onComplete(@NonNull Task<String> task) {
-                            try {
-                                if (!task.isSuccessful()) {
-                                    Logger.error("Fetching FCM registration token failed: " + task.getException());
-                                    return;
-                                }
 
-                                // Get new FCM registration token
-                                String token = task.getResult();
-                                if (token == null) {
-                                    com.flarelane.Logger.error("token is null");
-                                    return;
-                                }
 
-                                com.flarelane.Logger.verbose("FirebaseMessaging.getInstance().getToken() is Completed");
 
-                                if (savedPushToken == null || !savedPushToken.contentEquals(token)) {
-                                    com.flarelane.Logger.verbose("new PushToken is saved");
-                                    com.flarelane.BaseSharedPreferences.setPushToken(context, token);
-                                }
-
-                                if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
-                                    com.flarelane.Logger.verbose("savedDeviceId is not exists, newly registered");
-                                    com.flarelane.DeviceService.register(context, projectId, token);
-                                } else {
-                                    com.flarelane.Logger.verbose("savedDeviceId is exists : " + savedDeviceId);
-                                }
-
-                            } catch (Exception e) {
-                                com.flarelane.BaseErrorHandler.handle(e);
-                            }
-                        }
-                    });
                 }
             });
         } catch (Exception e) {
@@ -117,8 +126,8 @@ public class FlareLane {
 
     public static void setIsSubscribed(Context context, boolean isSubscribed) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
             JSONObject data = new JSONObject();
             data.put("isSubscribed", isSubscribed);
@@ -136,8 +145,8 @@ public class FlareLane {
 
     public static void setUserId(Context context, String userId) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
             JSONObject data = new JSONObject();
             data.put("userId", userId == null ? JSONObject.NULL : userId);
@@ -155,8 +164,8 @@ public class FlareLane {
 
     public static void setTags(Context context, JSONObject tags) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
             JSONObject data = new JSONObject();
             data.put("tags", tags);
@@ -174,8 +183,8 @@ public class FlareLane {
 
     public static void deleteTags(Context context, ArrayList<String> keys) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context);
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
             com.flarelane.DeviceService.deleteTags(projectId, deviceId, keys);
         } catch (Exception e) {

@@ -1,9 +1,9 @@
 package com.flarelane;
 
-public class RemoteParams {
+class RemoteParams {
     String senderId;
 
-    public RemoteParams(String senderId) {
+    RemoteParams(String senderId) {
         this.senderId = senderId;
     }
 }
