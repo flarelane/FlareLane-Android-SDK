@@ -20,7 +20,7 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.0.8";
+        public static String version = "1.0.9";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
