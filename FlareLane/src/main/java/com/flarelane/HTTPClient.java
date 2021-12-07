@@ -38,6 +38,7 @@ class HTTPClient {
                     conn.setRequestMethod("GET");
                     conn.setRequestProperty("Content-Type", "application/json;charset=UTF-8");
                     conn.setRequestProperty("Accept","application/json");
+                    conn.setRequestProperty("x-flarelane-sdk-info",FlareLane.SdkInfo.type + "-" + FlareLane.SdkInfo.version);
                     conn.setUseCaches(false);
 
                     handleResponse(conn, responseHandler);
@@ -79,6 +80,7 @@ class HTTPClient {
 
                     conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
                     conn.setRequestProperty("Accept","application/json");
+                    conn.setRequestProperty("x-flarelane-sdk-info",FlareLane.SdkInfo.type + "-" + FlareLane.SdkInfo.version);
                     conn.setRequestMethod(method);
 
                     if (body != null) {

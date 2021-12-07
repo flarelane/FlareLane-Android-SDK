@@ -14,20 +14,17 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import static com.flarelane.FlareLane.sdkType;
-import static com.flarelane.FlareLane.sdkVersion;
-
 class DeviceService {
     static JSONObject getSystemInfo() throws Exception {
         JSONObject data = new JSONObject();
         data.put("platform", "android");
         data.put("deviceModel", Build.MODEL);
         data.put("osVersion", String.valueOf(Build.VERSION.RELEASE));
-        data.put("sdkVersion", sdkVersion);
+        data.put("sdkVersion", FlareLane.SdkInfo.version);
         data.put("timeZone", TimeZone.getDefault().getID());
         data.put("languageCode", Locale.getDefault().getLanguage());
         data.put("countryCode", Locale.getDefault().getCountry());
-        data.put("sdkType", sdkType.toString());
+        data.put("sdkType", FlareLane.SdkInfo.type.toString());
 
         return data;
     }

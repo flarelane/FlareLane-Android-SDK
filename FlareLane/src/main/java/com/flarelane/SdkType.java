@@ -1,6 +1,6 @@
 package com.flarelane;
 
-enum SdkType {
+public enum SdkType {
     NATIVE {
         @Override
         public String toString() {

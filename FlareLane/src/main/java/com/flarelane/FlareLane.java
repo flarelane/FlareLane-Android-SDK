@@ -18,16 +18,16 @@ import java.util.ArrayList;
 
 
 public class FlareLane {
-    protected static String sdkVersion = "";
-    public static SdkType sdkType = SdkType.NATIVE;
+    public static class SdkInfo {
+        public static SdkType type = SdkType.NATIVE;
+        public static String version = "1.0.8";
+    }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
 
     public static void initWithContext(Context context, String projectId) {
         try {
-            sdkVersion = context.getString(R.string.sdk_version);
-
             com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
