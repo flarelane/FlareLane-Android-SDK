@@ -67,8 +67,8 @@ public class MessagingService extends FirebaseMessagingService {
                         remoteMessage.getData().get("url")
                 );
 
-                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
-                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(this.getApplicationContext());
+                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext(), false);
+                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(this.getApplicationContext(), false);
 
                 if (isForeground) {
                     EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);

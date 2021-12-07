@@ -15,8 +15,8 @@ public class NotificationConvertedActivity extends Activity {
             if (getIntent().hasExtra("notificationId")) {
                 String notificationId = getIntent().getStringExtra("notificationId");
 
-                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
-                String deviceId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext());
+                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext(), false);
+                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(this.getApplicationContext(), false);
 
                 com.flarelane.Notification notification = new com.flarelane.Notification(
                         notificationId,

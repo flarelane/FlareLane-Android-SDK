@@ -12,8 +12,10 @@ class BaseSharedPreferences {
         return context.getSharedPreferences(SHARED_PREFERENCE_KEY, Context.MODE_PRIVATE);
     }
 
-    public static String getDeviceId(Context context) {
-        return getSharedPreferences(context).getString(DEVICE_ID_KEY, null);
+    public static String getDeviceId(Context context, boolean nullable) throws NullValueException {
+        String data = getSharedPreferences(context).getString(DEVICE_ID_KEY, null);
+        if (nullable == false && data == null) throw new NullValueException("deviceId");
+        return data;
     }
 
     public static boolean setDeviceId(Context context, String deviceId) {
@@ -22,8 +24,10 @@ class BaseSharedPreferences {
         return editor.commit();
     }
 
-    public static String getProjectId(Context context) {
-        return getSharedPreferences(context).getString(PROJECT_ID_KEY, null);
+    public static String getProjectId(Context context, boolean nullable) throws NullValueException {
+        String data = getSharedPreferences(context).getString(PROJECT_ID_KEY, null);
+        if (nullable == false && data == null) throw new NullValueException("projectId");
+        return data;
     }
 
     public static boolean setProjectId(Context context, String projectId) {
@@ -32,8 +36,10 @@ class BaseSharedPreferences {
         return editor.commit();
     }
 
-    public static String getPushToken(Context context) {
-        return getSharedPreferences(context).getString(PUSH_TOKEN_KEY, null);
+    public static String getPushToken(Context context, boolean nullable) throws NullValueException {
+        String data = getSharedPreferences(context).getString(PUSH_TOKEN_KEY, null);
+        if (nullable == false && data == null) throw new NullValueException("pushToken");
+        return data;
     }
 
     public static boolean setPushToken(Context context, String projectId) {
