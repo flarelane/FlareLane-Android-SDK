@@ -25,6 +25,7 @@ public class FlareLane {
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
+    protected static int notificationIcon = 0;
 
     public static void initWithContext(Context context, String projectId) {
         try {
@@ -91,16 +92,15 @@ public class FlareLane {
                     } catch (Exception e) {
                         BaseErrorHandler.handle(e);
                     }
-
-
-
-
-
                 }
             });
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static void setNotificationIcon(int notificationIcon) {
+        FlareLane.notificationIcon = notificationIcon;
     }
 
     public static void setLogLevel(int logLevel) {
