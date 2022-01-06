@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -88,7 +89,7 @@ public class MessagingService extends FirebaseMessagingService {
                 Context context = this.getApplicationContext();
 
                 Notification notification = new NotificationCompat.Builder(this.getApplicationContext(), ChannelManager.getChannelId(this.getApplicationContext()))
-                        .setSmallIcon(android.R.drawable.ic_menu_info_details)
+                        .setSmallIcon(getNotificationIcon())
                         .setContentText(flarelaneNotification.body)
                         .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
                         .setAutoCancel(true)
@@ -106,5 +107,18 @@ public class MessagingService extends FirebaseMessagingService {
         } catch (Exception e) {
             BaseErrorHandler.handle(e);
         }
+    }
+
+    private int getNotificationIcon() {
+        // TODO: Temporarily available only from Lollipop higher
+        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            // if notificationIcon was set
+            if (FlareLane.notificationIcon != 0) {
+                return FlareLane.notificationIcon;
+            }
+        }
+
+        // Use a default notification icon
+        return android.R.drawable.ic_menu_info_details;
     }
 }

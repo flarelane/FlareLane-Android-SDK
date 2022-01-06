@@ -20,11 +20,12 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.0.9";
+        public static String version = "1.0.10";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
+    protected static int notificationIcon = 0;
 
     public static void initWithContext(Context context, String projectId) {
         try {
@@ -91,16 +92,15 @@ public class FlareLane {
                     } catch (Exception e) {
                         BaseErrorHandler.handle(e);
                     }
-
-
-
-
-
                 }
             });
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static void setNotificationIcon(int notificationIcon) {
+        FlareLane.notificationIcon = notificationIcon;
     }
 
     public static void setLogLevel(int logLevel) {
