@@ -20,7 +20,7 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.0.10";
+        public static String version = "1.0.11";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
@@ -99,6 +99,7 @@ public class FlareLane {
         }
     }
 
+    // TODO: (Deprecated) FlareLane 클래스 내 코드로 아이콘 변경할 수 없도록 할 예정 (기본 리소스 이름을 인식하게 하거나, Notification 의 변수 값으로 동적 할당 예정)
     public static void setNotificationIcon(int notificationIcon) {
         FlareLane.notificationIcon = notificationIcon;
     }

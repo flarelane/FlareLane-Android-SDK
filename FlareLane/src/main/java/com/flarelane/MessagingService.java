@@ -110,15 +110,26 @@ public class MessagingService extends FirebaseMessagingService {
     }
 
     private int getNotificationIcon() {
-        // TODO: Temporarily available only from Lollipop higher
-        if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            // if notificationIcon was set
-            if (FlareLane.notificationIcon != 0) {
-                return FlareLane.notificationIcon;
+        try {
+            // TODO: Temporarily available only from Lollipop higher
+            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                // TODO: if notificationIcon was set (LEGACY)
+                if (FlareLane.notificationIcon != 0) {
+                    return FlareLane.notificationIcon;
+                }
+
+                // if default notification icon is exists
+                String defaultIconIdentifierName = "ic_stat_flarelane_default";
+                int getDefaultIconId = this.getApplicationContext().getResources().getIdentifier(defaultIconIdentifierName, "drawable", this.getApplicationContext().getPackageName());
+                if (getDefaultIconId != 0) {
+                    return getDefaultIconId;
+                }
             }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
         }
 
-        // Use a default notification icon
+        // Use a system default notification icon
         return android.R.drawable.ic_menu_info_details;
     }
 }
