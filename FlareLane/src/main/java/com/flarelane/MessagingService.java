@@ -6,7 +6,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -15,6 +19,9 @@ import androidx.core.app.NotificationManagerCompat;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -65,7 +72,9 @@ public class MessagingService extends FirebaseMessagingService {
                         remoteMessage.getData().get("notificationId"),
                         remoteMessage.getData().get("body"),
                         remoteMessage.getData().get("title"),
-                        remoteMessage.getData().get("url")
+                        remoteMessage.getData().get("url"),
+                        remoteMessage.getData().get("imageUrl"),
+                        remoteMessage.getData().get("accentColor")
                 );
 
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext(), false);
@@ -82,21 +91,55 @@ public class MessagingService extends FirebaseMessagingService {
                         .putExtra("title", flarelaneNotification.title)
                         .putExtra("body", flarelaneNotification.body)
                         .putExtra("url", flarelaneNotification.url)
+                        .putExtra("imageUrl", flarelaneNotification.imageUrl)
+                        .putExtra("accentColor", flarelaneNotification.accentColor)
                         .putExtra("notificationId", flarelaneNotification.id);
                 PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
                 int currentIcon = getPackageManager().getApplicationInfo(this.getPackageName(), PackageManager.GET_META_DATA).icon;
                 Context context = this.getApplicationContext();
 
-                Notification notification = new NotificationCompat.Builder(this.getApplicationContext(), ChannelManager.getChannelId(this.getApplicationContext()))
+                Bitmap image = null;
+                if (flarelaneNotification.imageUrl != null) {
+                    try {
+                        URL url = new URL(flarelaneNotification.imageUrl);
+                        InputStream in;
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoInput(true);
+                        connection.connect();
+                        in = connection.getInputStream();
+                        image = BitmapFactory.decodeStream(in);
+                    } catch (Exception e) {
+                        Logger.error(Log.getStackTraceString(e));
+                    }
+                }
+
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(this.getApplicationContext(), ChannelManager.getChannelId(this.getApplicationContext()))
                         .setSmallIcon(getNotificationIcon())
                         .setContentText(flarelaneNotification.body)
                         .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
                         .setAutoCancel(true)
                         .setContentIntent(contentIntent)
                         .setPriority(NotificationCompat.PRIORITY_MAX)
-                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                        .build();
+                        .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
+
+                if (flarelaneNotification.accentColor != null) {
+                    try {
+                        builder = builder.setColor(Color.parseColor(flarelaneNotification.accentColor));
+                    } catch (Exception e) {
+                        com.flarelane.BaseErrorHandler.handle(e);
+                    }
+                }
+
+
+                if (image != null) {
+                    builder = builder
+                            .setLargeIcon(image)
+                            .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon(null));
+                }
+
+                Notification notification = builder.build();
 
                 notification.defaults|= Notification.DEFAULT_SOUND;
                 notification.defaults|= Notification.DEFAULT_LIGHTS;
