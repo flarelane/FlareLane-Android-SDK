@@ -94,7 +94,7 @@ public class MessagingService extends FirebaseMessagingService {
                         .putExtra("imageUrl", flarelaneNotification.imageUrl)
                         .putExtra("accentColor", flarelaneNotification.accentColor)
                         .putExtra("notificationId", flarelaneNotification.id);
-                PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_IMMUTABLE);
 
                 int currentIcon = getPackageManager().getApplicationInfo(this.getPackageName(), PackageManager.GET_META_DATA).icon;
                 Context context = this.getApplicationContext();
