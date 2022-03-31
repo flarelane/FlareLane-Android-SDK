@@ -137,6 +137,8 @@ public class MessagingService extends FirebaseMessagingService {
                     builder = builder
                             .setLargeIcon(image)
                             .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon(null));
+                } else {
+                    builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
                 }
 
                 Notification notification = builder.build();
