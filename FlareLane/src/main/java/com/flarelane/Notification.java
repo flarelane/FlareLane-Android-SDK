@@ -1,5 +1,10 @@
 package com.flarelane;
 
+import static java.lang.Integer.parseInt;
+
+import android.graphics.Color;
+
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -12,12 +17,25 @@ public class Notification {
     public String body;
     @Nullable
     public String url;
+    @Nullable
+    public String imageUrl;
+    @Nullable
+    public String accentColor;
 
-    public Notification(@NonNull String id, @NonNull String body, @Nullable String title, @Nullable String url) {
+    public Notification(
+            @NonNull String id,
+            @NonNull String body,
+            @Nullable String title,
+            @Nullable String url,
+            @Nullable String imageUrl,
+            @Nullable String accentColor
+    ) {
         this.id = id;
         this.body = body;
         this.title = title;
         this.url = url;
+        this.imageUrl = imageUrl;
+        this.accentColor = accentColor;
     }
 
     @Override
@@ -27,6 +45,8 @@ public class Notification {
                 ", title='" + title + '\'' +
                 ", body='" + body + '\'' +
                 ", url='" + url + '\'' +
+                ", imageUrl='" + imageUrl + '\'' +
+                ", accentColor='" + accentColor + '\'' +
                 '}';
     }
 }

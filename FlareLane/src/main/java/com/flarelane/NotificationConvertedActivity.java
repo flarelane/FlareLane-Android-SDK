@@ -22,7 +22,9 @@ public class NotificationConvertedActivity extends Activity {
                         notificationId,
                         getIntent().getStringExtra("body"),
                         getIntent().getStringExtra("title"),
-                        getIntent().getStringExtra("url")
+                        getIntent().getStringExtra("url"),
+                        getIntent().getStringExtra("imageUrl"),
+                        getIntent().getStringExtra("accentColor")
                 );
 
                 EventService.createConverted(projectId, deviceId, notification);
