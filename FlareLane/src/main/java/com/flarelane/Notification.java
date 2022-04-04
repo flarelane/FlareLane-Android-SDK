@@ -19,23 +19,19 @@ public class Notification {
     public String url;
     @Nullable
     public String imageUrl;
-    @Nullable
-    public String accentColor;
 
     public Notification(
             @NonNull String id,
             @NonNull String body,
             @Nullable String title,
             @Nullable String url,
-            @Nullable String imageUrl,
-            @Nullable String accentColor
+            @Nullable String imageUrl
     ) {
         this.id = id;
         this.body = body;
         this.title = title;
         this.url = url;
         this.imageUrl = imageUrl;
-        this.accentColor = accentColor;
     }
 
     @Override
@@ -46,7 +42,6 @@ public class Notification {
                 ", body='" + body + '\'' +
                 ", url='" + url + '\'' +
                 ", imageUrl='" + imageUrl + '\'' +
-                ", accentColor='" + accentColor + '\'' +
                 '}';
     }
 }

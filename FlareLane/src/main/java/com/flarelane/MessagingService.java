@@ -73,8 +73,7 @@ public class MessagingService extends FirebaseMessagingService {
                         remoteMessage.getData().get("body"),
                         remoteMessage.getData().get("title"),
                         remoteMessage.getData().get("url"),
-                        remoteMessage.getData().get("imageUrl"),
-                        remoteMessage.getData().get("accentColor")
+                        remoteMessage.getData().get("imageUrl")
                 );
 
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(this.getApplicationContext(), false);
@@ -92,7 +91,6 @@ public class MessagingService extends FirebaseMessagingService {
                         .putExtra("body", flarelaneNotification.body)
                         .putExtra("url", flarelaneNotification.url)
                         .putExtra("imageUrl", flarelaneNotification.imageUrl)
-                        .putExtra("accentColor", flarelaneNotification.accentColor)
                         .putExtra("notificationId", flarelaneNotification.id);
                 PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_IMMUTABLE);
 
@@ -124,9 +122,9 @@ public class MessagingService extends FirebaseMessagingService {
                         .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
 
-                if (flarelaneNotification.accentColor != null) {
+                if (NotificationManager.accentColor != null) {
                     try {
-                        builder = builder.setColor(Color.parseColor(flarelaneNotification.accentColor));
+                        builder = builder.setColor(Color.parseColor(NotificationManager.accentColor));
                     } catch (Exception e) {
                         com.flarelane.BaseErrorHandler.handle(e);
                     }

@@ -45,7 +45,7 @@ public class FlareLane {
                 @Override
                 public void onSuccess(RemoteParams remoteParams) {
                     try {
-                        if (remoteParams.senderId == null) {
+                        if (remoteParams.fcmSenderId == null) {
                             Logger.error("senderId is null. Please check a property of your project");
                             return;
                         }
@@ -53,7 +53,7 @@ public class FlareLane {
                         String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
                         String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, true);
 
-                        Task<String> getTokenTask = FirebaseManager.getFirebaseMessaging(context, remoteParams.senderId).getToken();
+                        Task<String> getTokenTask = FirebaseManager.getFirebaseMessaging(context, remoteParams).getToken();
                         getTokenTask.addOnCompleteListener(new OnCompleteListener<String>() {
                             @Override
                             public void onComplete(@NonNull Task<String> task) {
