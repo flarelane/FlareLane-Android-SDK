@@ -1,9 +1,15 @@
 package com.flarelane;
 
 class RemoteParams {
-    String senderId;
+    String fcmAppId;
+    String fcmProjectId;
+    String fcmApiKey;
+    String fcmSenderId;
 
-    RemoteParams(String senderId) {
-        this.senderId = senderId;
+    public RemoteParams(String fcmAppId, String fcmProjectId, String fcmApiKey, String fcmSenderId) {
+        this.fcmAppId = fcmAppId;
+        this.fcmProjectId = fcmProjectId;
+        this.fcmApiKey = fcmApiKey;
+        this.fcmSenderId = fcmSenderId;
     }
 }

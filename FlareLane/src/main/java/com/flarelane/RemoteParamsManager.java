@@ -17,9 +17,12 @@ class RemoteParamsManager {
                     Logger.verbose("fetchRemoteParams Success: " + response.toString());
                     JSONObject data = response.getJSONObject("data");
 
-                    String senderId = data.isNull("fcmSenderId") ? null : data.getString("fcmSenderId");
+                    String fcmAppId = data.isNull("fcmAppId") ? null : data.getString("fcmAppId");
+                    String fcmProjectId = data.isNull("fcmProjectId") ? null : data.getString("fcmProjectId");
+                    String fcmApiKey = data.isNull("fcmApiKey") ? null : data.getString("fcmApiKey");
+                    String fcmSenderId = data.isNull("fcmSenderId") ? null : data.getString("fcmSenderId");
 
-                    remoteParams = new RemoteParams(senderId);
+                    remoteParams = new RemoteParams(fcmAppId, fcmProjectId, fcmApiKey, fcmSenderId);
                     handler.onSuccess(remoteParams);
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);

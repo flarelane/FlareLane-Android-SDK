@@ -6,6 +6,15 @@
 
     <application>
         <meta-data
+            android:name="com.flarelane.default_firebase_app_id"
+            android:value="1:415602473946:android:98a2ad40916ab031e59ee3" />
+        <meta-data
+            android:name="com.flarelane.default_firebase_project_id"
+            android:value="flarelane-public" />
+        <meta-data
+            android:name="com.flarelane.default_firebase_api_key"
+            android:value="AIzaSyC44DyZywKLyQH3AVXZrLbGu7VDJosMKQ0" />
+        <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />
 

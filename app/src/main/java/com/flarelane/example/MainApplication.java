@@ -6,6 +6,7 @@ import android.util.Log;
 import com.flarelane.FlareLane;
 import com.flarelane.Notification;
 import com.flarelane.NotificationConvertedHandler;
+import com.flarelane.NotificationManager;
 
 public class MainApplication extends Application {
 
@@ -15,6 +16,7 @@ public class MainApplication extends Application {
 
         FlareLane.setLogLevel(Log.VERBOSE);
         FlareLane.initWithContext(this, "INPUT_YOUR_PROJECT_ID");
+        NotificationManager.accentColor = "#1D4289";
         FlareLane.setNotificationConvertedHandler(new NotificationConvertedHandler() {
             @Override
             public void onConverted(Notification notification) {
