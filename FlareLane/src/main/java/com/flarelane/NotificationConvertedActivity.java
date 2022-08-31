@@ -21,6 +21,7 @@ public class NotificationConvertedActivity extends Activity {
                 com.flarelane.Notification notification = new com.flarelane.Notification(
                         notificationId,
                         getIntent().getStringExtra("body"),
+                        getIntent().getStringExtra("data"),
                         getIntent().getStringExtra("title"),
                         getIntent().getStringExtra("url"),
                         getIntent().getStringExtra("imageUrl")

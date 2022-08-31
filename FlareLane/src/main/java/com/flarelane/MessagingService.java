@@ -71,6 +71,7 @@ public class MessagingService extends FirebaseMessagingService {
                 com.flarelane.Notification flarelaneNotification = new com.flarelane.Notification(
                         remoteMessage.getData().get("notificationId"),
                         remoteMessage.getData().get("body"),
+                        remoteMessage.getData().get("data"),
                         remoteMessage.getData().get("title"),
                         remoteMessage.getData().get("url"),
                         remoteMessage.getData().get("imageUrl")
@@ -91,6 +92,7 @@ public class MessagingService extends FirebaseMessagingService {
                         .putExtra("body", flarelaneNotification.body)
                         .putExtra("url", flarelaneNotification.url)
                         .putExtra("imageUrl", flarelaneNotification.imageUrl)
+                        .putExtra("data", flarelaneNotification.data)
                         .putExtra("notificationId", flarelaneNotification.id);
                 PendingIntent contentIntent = PendingIntent.getActivity(this.getApplicationContext(), new Random().nextInt(543254), intent, PendingIntent.FLAG_IMMUTABLE);
 
