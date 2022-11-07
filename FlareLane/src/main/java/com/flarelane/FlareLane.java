@@ -20,7 +20,7 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.0.14";
+        public static String version = "1.0.15";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
@@ -191,5 +191,16 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static String getDeviceId(Context context) {
+        try {
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+            return deviceId;
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+
+        return null;
     }
 }
