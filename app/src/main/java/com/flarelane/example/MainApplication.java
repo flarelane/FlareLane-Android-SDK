@@ -7,15 +7,24 @@ import com.flarelane.FlareLane;
 import com.flarelane.Notification;
 import com.flarelane.NotificationConvertedHandler;
 import com.flarelane.NotificationManager;
+import com.onesignal.OneSignal;
 
 public class MainApplication extends Application {
+    private static final String FLARELANE_PROJECT_ID = "FLARELANE_PROJECT_ID";
+    private static final String ONESIGNAL_APP_ID = "ONESIGNAL_APP_ID";
+
 
     @Override
     public void onCreate() {
         super.onCreate();
 
+        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
+        OneSignal.initWithContext(this);
+        OneSignal.setAppId(ONESIGNAL_APP_ID);
+        OneSignal.promptForPushNotifications();
+
         FlareLane.setLogLevel(Log.VERBOSE);
-        FlareLane.initWithContext(this, "INPUT_YOUR_PROJECT_ID");
+        FlareLane.initWithContext(this, FLARELANE_PROJECT_ID);
         NotificationManager.accentColor = "#1D4289";
         FlareLane.setNotificationConvertedHandler(new NotificationConvertedHandler() {
             @Override

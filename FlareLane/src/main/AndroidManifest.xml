@@ -14,17 +14,16 @@
         <meta-data
             android:name="com.flarelane.default_firebase_api_key"
             android:value="AIzaSyC44DyZywKLyQH3AVXZrLbGu7VDJosMKQ0" />
-        <meta-data
-            android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="@string/default_notification_channel_id" />
 
-        <service
-            android:name=".MessagingService"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+        <receiver
+            android:name=".FCMBroadcastReceiver"
+            android:permission="com.google.android.c2dm.permission.SEND"
+            android:exported="true">
+            <intent-filter android:priority="999" >
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="${applicationId}" />
             </intent-filter>
-        </service>
+        </receiver>
 
         <activity android:name=".NotificationConvertedActivity"
             android:noHistory="true"
