@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import android.app.NotificationManager;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.legacy.content.WakefulBroadcastReceiver;
@@ -115,9 +116,9 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
 
-        if (NotificationManager.accentColor != null) {
+        if (com.flarelane.NotificationManager.accentColor != null) {
             try {
-                builder = builder.setColor(Color.parseColor(NotificationManager.accentColor));
+                builder = builder.setColor(Color.parseColor(com.flarelane.NotificationManager.accentColor));
             } catch (Exception e) {
                 com.flarelane.BaseErrorHandler.handle(e);
             }
@@ -138,7 +139,8 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
         notification.defaults|= android.app.Notification.DEFAULT_LIGHTS;
         notification.defaults|= android.app.Notification.DEFAULT_VIBRATE;
 
-        NotificationManagerCompat.from(context).notify((int) new Date().getTime(), notification);
+        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify((int) new Date().getTime(), notification);
     }
 
     private static boolean appInForeground(@NonNull Context context) {
