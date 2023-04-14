@@ -3,6 +3,7 @@
     package="com.flarelane">
 
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application>
         <meta-data
@@ -26,6 +27,10 @@
         </receiver>
 
         <activity android:name=".NotificationConvertedActivity"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+        </activity>
+        <activity android:name=".PermissionActivity"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" >
         </activity>

@@ -40,12 +40,10 @@ class DeviceService {
                     data.put("isSubscribed", true);
                     data.put("gaid", gaid);
 
-
                     DeviceService.create(projectId, data, new ResponseHandler() {
                         @Override
                         public void onSuccess(Device device) {
                             BaseSharedPreferences.setDeviceId(context, device.id);
-                            BaseSharedPreferences.setProjectId(context, projectId);
                             Logger.verbose("deviceId : " + device.id);
                         }
                     });
