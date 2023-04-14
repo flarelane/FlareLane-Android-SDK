@@ -1,7 +1,17 @@
 package com.flarelane.example;
 
+import android.Manifest;
 import android.app.Application;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.activity.result.ActivityResultCaller;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.flarelane.FlareLane;
 import com.flarelane.Notification;
@@ -23,7 +33,7 @@ public class MainApplication extends Application {
         FlareLane.setNotificationConvertedHandler(new NotificationConvertedHandler() {
             @Override
             public void onConverted(Notification notification) {
-                Log.d("FlareLane-Example", "onConverted: " + notification.toString());
+                Log.d("FlareLane", "onConverted: " + notification.toString());
             }
         });
 
@@ -32,4 +42,5 @@ public class MainApplication extends Application {
         OneSignal.setAppId(ONESIGNAL_APP_ID);
         OneSignal.promptForPushNotifications();
     }
+
 }

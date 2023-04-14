@@ -29,13 +29,15 @@ class ActivityLifecycleManager {
             try {
                 if (isActivated == false) {
                     Context context = activity.getApplicationContext();
-                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                    String pushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, false);
+                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
+                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+                    String pushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, true);
 
-                    com.flarelane.Logger.verbose("App is activated");
-                    isActivated = true;
-                    com.flarelane.DeviceService.activate(activity.getApplicationContext(), projectId, deviceId, pushToken);
+                    if (projectId != null && deviceId != null & pushToken != null) {
+                        com.flarelane.Logger.verbose("App is activated");
+                        isActivated = true;
+                        com.flarelane.DeviceService.activate(activity.getApplicationContext(), projectId, deviceId, pushToken);
+                    }
                 }
             } catch (Exception e) {
                 BaseErrorHandler.handle(e);
