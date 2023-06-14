@@ -127,7 +127,7 @@ public class FlareLane {
             com.flarelane.DeviceService.update(projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
                 @Override
                 public void onSuccess(com.flarelane.Device device) {
-
+                    BaseSharedPreferences.setUserId(context, device.userId);
                 }
             });
         } catch (Exception e) {
@@ -174,6 +174,21 @@ public class FlareLane {
         }
 
         return null;
+    }
+
+    public static void trackEvent(Context context, String type, JSONObject data) {
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+            String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
+
+            String subjectType = userId != null ? "user" : "device";
+            String subjectId =  userId != null ? userId : deviceId;
+
+            com.flarelane.EventService.trackEvent(projectId, subjectType, subjectId, type, data);
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
     }
 
     protected static void initDevice(Context context) {

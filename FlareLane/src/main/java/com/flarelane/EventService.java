@@ -2,6 +2,7 @@ package com.flarelane;
 
 import android.util.EventLog;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 class EventService {
@@ -34,5 +35,21 @@ class EventService {
         body.put("createdAt", Utils.getISO8601DateString());
 
         HTTPClient.post("internal/v1/projects/" + projectId + "/events", body, new HTTPClient.ResponseHandler());
+    }
+
+    static protected void trackEvent(String projectId, String subjectType, String subjectId, String type, JSONObject data) throws Exception {
+        JSONObject event = new JSONObject()
+                .put("type", type)
+                .put("subjectType", subjectType)
+                .put("subjectId", subjectId)
+                .put("createdAt", Utils.getISO8601DateString());
+
+        if (data != null) {
+            event.put("data", data);
+        }
+
+        JSONObject body = new JSONObject().put("events", new JSONArray().put(event));
+
+        HTTPClient.post("internal/v1/projects/" + projectId + "/events-v2", body, new HTTPClient.ResponseHandler());
     }
 }
