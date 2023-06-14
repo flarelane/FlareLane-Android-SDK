@@ -69,7 +69,7 @@ class DeviceService {
                     DeviceService.update(projectId, deviceId, data, new ResponseHandler() {
                         @Override
                         public void onSuccess(Device device) {
-
+                            BaseSharedPreferences.setUserId(context, device.userId);
                         }
                     });
                 } catch (Exception e) {
@@ -95,7 +95,8 @@ class DeviceService {
                 super.onSuccess(responseCode, response);
 
                 try {
-                    Device device = new Device(response.getJSONObject("data").getString("id"));
+                    JSONObject data = response.getJSONObject("data");
+                    Device device = new Device(data.getString("id"), null);
                     handler.onSuccess(device);
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);
@@ -111,7 +112,8 @@ class DeviceService {
                 super.onSuccess(responseCode, response);
 
                 try {
-                    Device device = new Device(response.getJSONObject("data").getString("id"));
+                    JSONObject data = response.getJSONObject("data");
+                    Device device = new Device(data.getString("id"), data.isNull("userId") ? null : data.getString("userId"));
                     handler.onSuccess(device);
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);

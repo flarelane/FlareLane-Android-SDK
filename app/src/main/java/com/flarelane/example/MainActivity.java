@@ -97,5 +97,21 @@ public class MainActivity extends AppCompatActivity {
                 FlareLane.deleteTags(context, keys);
             }
         });
+
+        Button trackEventButton = findViewById(R.id.trackEventButton);
+        trackEventButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("num", 10);
+                    data.put("str", "hello world");
+
+                    FlareLane.trackEvent(context, "test_event", data);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 }
