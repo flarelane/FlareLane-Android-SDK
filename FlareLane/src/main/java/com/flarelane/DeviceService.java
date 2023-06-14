@@ -96,7 +96,7 @@ class DeviceService {
 
                 try {
                     JSONObject data = response.getJSONObject("data");
-                    Device device = new Device(data.getString("id"), data.getString("userId"));
+                    Device device = new Device(data.getString("id"), null);
                     handler.onSuccess(device);
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);
