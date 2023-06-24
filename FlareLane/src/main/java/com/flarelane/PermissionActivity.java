@@ -44,5 +44,6 @@ public class PermissionActivity extends Activity {
         }
 
         finish();
+        overridePendingTransition(0, 0);
     }
 }
