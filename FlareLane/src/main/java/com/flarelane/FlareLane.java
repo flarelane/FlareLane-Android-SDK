@@ -27,12 +27,13 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.3.1";
+        public static String version = "1.3.2";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
     protected static int notificationIcon = 0;
+    protected static boolean alreadyPermissionAsked = false;
 
     public static void initWithContext(Context context, String projectId) {
         try {
