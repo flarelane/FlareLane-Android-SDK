@@ -39,6 +39,8 @@ public class FlareLane {
             com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
+
+
             // If projectId is null or different, reset savedDeviceId to null
             String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
             if (savedProjectId == null || !savedProjectId.contentEquals(projectId)) {
@@ -128,6 +130,27 @@ public class FlareLane {
                 @Override
                 public void onSuccess(com.flarelane.Device device) {
                     BaseSharedPreferences.setUserId(context, device.userId);
+                }
+            });
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
+
+    public static void getTags(Context context, final GetTagsHandler getTagsHandler) {
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+
+            com.flarelane.DeviceService.getTags(projectId, deviceId, new com.flarelane.DeviceService.TagsResponseHandler() {
+                @Override
+                public void onSuccess(JSONObject tags) {
+                    if (getTagsHandler == null) {
+                        Logger.error("'getTags' called with null GetTagsHandler.");
+                        return;
+                    }
+
+                    getTagsHandler.onReceiveTags(tags);
                 }
             });
         } catch (Exception e) {
@@ -251,5 +274,9 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public interface GetTagsHandler {
+        void onReceiveTags(JSONObject tags);
     }
 }

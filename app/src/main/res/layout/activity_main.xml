@@ -28,16 +28,22 @@
             android:text="Toggle UserId" />
 
         <Button
+            android:id="@+id/getTagsButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Get Tags" />
+
+        <Button
             android:id="@+id/setTagsButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="set Tags" />
+            android:text="Set Tags" />
 
         <Button
             android:id="@+id/deleteTagsButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="delete Tags" />
+            android:text="Delete Tags" />
 
         <Button
             android:id="@+id/trackEventButton"
