@@ -70,6 +70,18 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        Button getTagsButton = findViewById(R.id.getTagsButton);
+        getTagsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FlareLane.getTags(context, new FlareLane.GetTagsHandler() {
+                    @Override
+                    public void onReceiveTags(JSONObject tags) {
+                        Log.d("FlareLane", "Received Tags: " + tags);
+                    }
+                });
+            }
+        });
 
         Button setTagsButton = findViewById(R.id.setTagsButton);
         setTagsButton.setOnClickListener(new View.OnClickListener() {
