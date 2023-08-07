@@ -15,13 +15,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 public class PermissionActivity extends Activity {
+
+
     @Override
     protected void onStart() {
         super.onStart();
-        askNotificationPermission();
+
+        if (!FlareLane.alreadyPermissionAsked) {
+            askNotificationPermission();
+        }
     }
 
     private void askNotificationPermission() {
+        FlareLane.alreadyPermissionAsked = true;
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
             return;
 
