@@ -1,8 +1,9 @@
 package com.flarelane;
 
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Build;
+
+import androidx.annotation.Nullable;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 
@@ -29,59 +30,42 @@ class DeviceService {
         return data;
     }
 
-    static void register(Context context, String projectId, String pushToken) {
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    String gaid = getAdvertisingId(context);
-                    JSONObject data = getSystemInfo();
-                    data.put("pushToken", pushToken);
-                    data.put("isSubscribed", true);
-                    data.put("gaid", gaid);
+    static void register(Context context, String projectId, @Nullable ResponseHandler responseHandler) {
+        try {
+            JSONObject data = getSystemInfo();
+            DeviceService.create(projectId, data, new ResponseHandler() {
+                @Override
+                public void onSuccess(Device device) {
+                    BaseSharedPreferences.setDeviceId(context, device.id);
+                    Logger.verbose("deviceId : " + device.id);
 
-                    DeviceService.create(projectId, data, new ResponseHandler() {
-                        @Override
-                        public void onSuccess(Device device) {
-                            BaseSharedPreferences.setDeviceId(context, device.id);
-                            Logger.verbose("deviceId : " + device.id);
-                        }
-                    });
-                } catch(Exception e) {
-                    BaseErrorHandler.handle(e);
+                    if (responseHandler != null)
+                        responseHandler.onSuccess(device);
                 }
-            }
-        });
-
-
-
+            });
+        } catch(Exception e) {
+            BaseErrorHandler.handle(e);
+        }
     }
 
-    static void activate(Context context, String projectId, String deviceId, String pushToken) {
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    JSONObject data = getSystemInfo();
-                    data.put("pushToken", pushToken);
-                    data.put("lastActiveAt", Utils.getISO8601DateString());
+    static void activate(Context context, String projectId, String deviceId, @Nullable ResponseHandler responseHandler) {
+        try {
+            JSONObject data = getSystemInfo();
+            data.put("lastActiveAt", Utils.getISO8601DateString());
 
-                    DeviceService.update(projectId, deviceId, data, new ResponseHandler() {
-                        @Override
-                        public void onSuccess(Device device) {
-                            BaseSharedPreferences.setUserId(context, device.userId);
-                        }
-                    });
-                } catch (Exception e) {
-                    BaseErrorHandler.handle(e);
+            DeviceService.update(context, projectId, deviceId, data, new ResponseHandler() {
+                @Override
+                public void onSuccess(Device device) {
+                    if (responseHandler != null)
+                        responseHandler.onSuccess(device);
                 }
-
-            }
-        });
-
+            });
+        } catch (Exception e) {
+            BaseErrorHandler.handle(e);
+        }
     }
 
-    static void getTags(String projectId, String deviceId, TagsResponseHandler handler)  throws JSONException {
+    static void getTags(String projectId, String deviceId, TagsResponseHandler handler) {
         HTTPClient.get("internal/v1/projects/" + projectId + "/devices/" + deviceId + "/tags", new HTTPClient.ResponseHandler() {
             @Override
             void onSuccess(int responseCode, JSONObject response) {
@@ -104,7 +88,7 @@ class DeviceService {
         HTTPClient.delete("internal/v1/projects/" + projectId + "/devices/" + deviceId + "/tags", data, new HTTPClient.ResponseHandler());
     }
 
-    static void create(String projectId, JSONObject data, ResponseHandler handler) {
+    static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
         HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
             @Override
             void onSuccess(int responseCode, JSONObject response) {
@@ -112,8 +96,11 @@ class DeviceService {
 
                 try {
                     JSONObject data = response.getJSONObject("data");
-                    Device device = new Device(data.getString("id"), null);
-                    handler.onSuccess(device);
+                    Device device = new Device(data.getString("id"), data.getBoolean("isSubscribed"), null);
+
+                    if (handler != null) {
+                        handler.onSuccess(device);
+                    }
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);
                 }
@@ -121,16 +108,22 @@ class DeviceService {
         });
     }
 
-    static void update(String projectId, String deviceId, JSONObject data, ResponseHandler handler) {
+    static void update(Context context, String projectId, String deviceId, JSONObject data, @Nullable ResponseHandler handler) {
         HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
             @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
 
                 try {
-                    JSONObject data = response.getJSONObject("data");
-                    Device device = new Device(data.getString("id"), data.isNull("userId") ? null : data.getString("userId"));
-                    handler.onSuccess(device);
+                    JSONObject responseData = response.getJSONObject("data");
+                    Device device = new Device(responseData.getString("id"), responseData.getBoolean("isSubscribed"), responseData.isNull("userId") ? null : responseData.getString("userId"));
+
+                    BaseSharedPreferences.setUserId(context, device.userId);
+                    BaseSharedPreferences.setIsSubscribed(context, device.isSubscribed);
+
+                    if (handler != null) {
+                        handler.onSuccess(device);
+                    }
                 } catch (Exception e) {
                     BaseErrorHandler.handle(e);
                 }

@@ -10,8 +10,13 @@ class Device {
     @Nullable
     public String userId;
 
-    public Device(@NonNull String id, @Nullable String userId) {
+    @Nullable
+    public boolean isSubscribed;
+
+
+    public Device(@NonNull String id, @Nullable boolean isSubscribed, @Nullable String userId) {
         this.id = id;
         this.userId = userId;
+        this.isSubscribed = isSubscribed;
     }
 }

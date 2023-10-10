@@ -1,12 +1,17 @@
 package com.flarelane;
 
+import androidx.annotation.NonNull;
+
 import org.json.JSONObject;
 
 class RemoteParamsManager {
     static RemoteParams remoteParams;
 
-    static void fetchRemoteParams(String projectId, ResponseHandler handler) {
-        if (remoteParams != null) return;
+    static void fetchRemoteParams(String projectId, @NonNull ResponseHandler handler) {
+        if (remoteParams != null) {
+            handler.onSuccess(remoteParams);
+            return;
+        };
 
         HTTPClient.get("internal/v1/projects/" + projectId + "/remote-params", new HTTPClient.ResponseHandler() {
             @Override

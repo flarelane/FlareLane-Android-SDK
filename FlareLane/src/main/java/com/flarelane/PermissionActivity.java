@@ -2,41 +2,36 @@ package com.flarelane;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
+import android.app.Application;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 public class PermissionActivity extends Activity {
-
-
     @Override
-    protected void onStart() {
-        super.onStart();
-
-        if (!FlareLane.alreadyPermissionAsked) {
-            askNotificationPermission();
-        }
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        askNotificationPermission();
     }
 
     private void askNotificationPermission() {
-        FlareLane.alreadyPermissionAsked = true;
+        Application application = (Application) this.getApplicationContext();
+        int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
-            return;
+//         Ask a permission if Android 13
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                targetSdkVersion >= Build.VERSION_CODES.TIRAMISU &&
+                !(ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+                        PackageManager.PERMISSION_GRANTED)) {
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED) {
-            FlareLane.initDevice(this);
-        } else {
+            BaseSharedPreferences.setAlreadyPermissionAsked(application, true);
             requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, 419);
+        } else {
+            finish();
         }
     }
 
@@ -46,8 +41,14 @@ public class PermissionActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case 419:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                    FlareLane.initDevice(this);
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    FlareLane.updatePushToken(getApplicationContext(), new FlareLane.UpdatePushTokenHandler() {
+                        @Override
+                        public void onSuccess(String pushToken) {
+
+                        }
+                    });
+                }
         }
 
         finish();
