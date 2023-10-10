@@ -1,5 +1,7 @@
 package com.flarelane;
 
+import androidx.annotation.Nullable;
+
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -26,7 +28,7 @@ class HTTPClient {
 
     private static final String BASE_URL = "https://service-api.flarelane.com/";
 
-    public static void get(String path, ResponseHandler responseHandler) {
+    public static void get(String path, @Nullable ResponseHandler responseHandler) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -52,19 +54,19 @@ class HTTPClient {
         }).start();
     }
 
-    public static void post(String path, JSONObject body, ResponseHandler responseHandler) {
+    public static void post(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
         sendRequestWithBody("POST", path, body, responseHandler);
     }
 
-    public static void patch(String path, JSONObject body, ResponseHandler responseHandler) {
+    public static void patch(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
         sendRequestWithBody("PATCH", path, body, responseHandler);
     }
 
-    public static void delete(String path, JSONObject body, ResponseHandler responseHandler) {
+    public static void delete(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
         sendRequestWithBody("DELETE", path, body, responseHandler);
     }
 
-    private static void sendRequestWithBody(String method, String path, JSONObject body, ResponseHandler responseHandler) {
+    private static void sendRequestWithBody(String method, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -105,7 +107,7 @@ class HTTPClient {
         }).start();
     }
 
-    private static void handleResponse(HttpURLConnection conn, ResponseHandler responseHandler) throws Exception {
+    private static void handleResponse(HttpURLConnection conn, @Nullable ResponseHandler responseHandler) throws Exception {
         int responseCode = conn.getResponseCode();
         InputStream in = null;
 
@@ -118,10 +120,12 @@ class HTTPClient {
         String response = convertStreamToString(in);
         JSONObject json = new JSONObject(response);
 
-        if (responseCode >= 200 && responseCode < 400) {
-            responseHandler.onSuccess(responseCode, json);
-        } else {
-            responseHandler.onFailure(responseCode, json);
+        if (responseHandler != null) {
+            if (responseCode >= 200 && responseCode < 400) {
+                responseHandler.onSuccess(responseCode, json);
+            } else {
+                responseHandler.onFailure(responseCode, json);
+            }
         }
     }
 

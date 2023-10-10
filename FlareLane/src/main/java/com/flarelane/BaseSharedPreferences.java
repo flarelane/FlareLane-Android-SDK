@@ -9,6 +9,8 @@ class BaseSharedPreferences {
     private static final String PROJECT_ID_KEY = "com.flarelane.PROJECT_ID_KEY";
     private static final String PUSH_TOKEN_KEY = "com.flarelane.PUSH_TOKEN_KEY";
     private static final String USER_ID_KEY = "com.flarelane.USER_ID_KEY";
+    private static final String IS_SUBSCRIBED_KEY = "com.flarelane.IS_SUBSCRIBED_KEY";
+    private static final String ALREADY_PERMISSION_ASKED_KEY = "com.flarelane.ALREADY_PERMISSION_ASKED_KEY";
 
     private static String getSharedPreferencesKey(Context context) {
         try {
@@ -72,6 +74,29 @@ class BaseSharedPreferences {
         } else {
             editor.putString(USER_ID_KEY, userId);
         }
+        return editor.commit();
+    }
+
+    public static String getIsSubscribed(Context context, boolean nullable) throws NullValueException {
+        String data = getSharedPreferences(context).getString(IS_SUBSCRIBED_KEY, null);
+        if (nullable != true && data == null) throw new NullValueException("isSubscribed");
+        return data;
+    }
+
+    public static boolean setIsSubscribed(Context context, boolean isSubscribed) {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.putString(IS_SUBSCRIBED_KEY, String.valueOf(isSubscribed));
+        return editor.commit();
+    }
+
+    public static boolean getAlreadyPermissionAsked(Context context) {
+        boolean data = getSharedPreferences(context).getBoolean(ALREADY_PERMISSION_ASKED_KEY, false);
+        return data;
+    }
+
+    public static boolean setAlreadyPermissionAsked(Context context, boolean asked) {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.putBoolean(ALREADY_PERMISSION_ASKED_KEY, asked);
         return editor.commit();
     }
 }
