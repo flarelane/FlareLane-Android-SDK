@@ -6,7 +6,10 @@ class RemoteParamsManager {
     static RemoteParams remoteParams;
 
     static void fetchRemoteParams(String projectId, ResponseHandler handler) {
-        if (remoteParams != null) return;
+        if (remoteParams != null) {
+            handler.onSuccess(remoteParams);
+            return;
+        };
 
         HTTPClient.get("internal/v1/projects/" + projectId + "/remote-params", new HTTPClient.ResponseHandler() {
             @Override

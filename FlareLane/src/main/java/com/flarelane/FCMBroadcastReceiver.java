@@ -1,8 +1,7 @@
 package com.flarelane;
 
-import android.app.ActivityManager;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -13,10 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import android.app.NotificationManager;
 import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.legacy.content.WakefulBroadcastReceiver;
 
 import org.json.JSONException;
@@ -26,7 +22,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
@@ -71,7 +66,7 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
         String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
-        boolean isForeground = (appInForeground(context));
+        boolean isForeground = (Helper.appInForeground(context));
         com.flarelane.Logger.verbose("onMessageReceived isForeground: " + isForeground);
         if (isForeground) {
             EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
@@ -141,22 +136,6 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
 
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify((int) new Date().getTime(), notification);
-    }
-
-    private static boolean appInForeground(@NonNull Context context) {
-        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> runningAppProcesses = activityManager.getRunningAppProcesses();
-        if (runningAppProcesses == null) {
-            return false;
-        }
-
-        for (ActivityManager.RunningAppProcessInfo runningAppProcess : runningAppProcesses) {
-            if (runningAppProcess.processName.equals(context.getPackageName()) &&
-                    runningAppProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private int getNotificationIcon(Context context) {
