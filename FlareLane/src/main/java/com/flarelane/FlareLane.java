@@ -6,10 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -27,20 +30,22 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.3.2";
+        public static String version = "1.4.0";
     }
 
     protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
-    private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
     protected static int notificationIcon = 0;
-    protected static boolean alreadyPermissionAsked = false;
+    protected static boolean requestPermissionOnLaunch = false;
+    private static Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static boolean isActivated = false;
+    private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
 
-    public static void initWithContext(Context context, String projectId) {
+
+    public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
+            FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
             com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
             com.flarelane.ChannelManager.createNotificationChannel(context);
-
-
 
             // If projectId is null or different, reset savedDeviceId to null
             String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
@@ -50,24 +55,6 @@ public class FlareLane {
             }
 
             Application application = (Application) context.getApplicationContext();
-            int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
-
-            // Ask a permission if Android 13
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    targetSdkVersion >= Build.VERSION_CODES.TIRAMISU &&
-                    !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Intent intent = new Intent(context, PermissionActivity.class);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(intent);
-                    }
-                }).start();
-            } else {
-                initDevice(context);
-            }
-
             application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
@@ -95,12 +82,13 @@ public class FlareLane {
                 notificationConvertedHandler.onConverted(EventService.unhandledConvertedNotification);
                 EventService.unhandledConvertedNotification = null;
             }
+
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
     }
 
-    public static void setIsSubscribed(Context context, boolean isSubscribed) {
+    public static void setIsSubscribed(Context context, boolean isSubscribed, @Nullable IsSubscribedHandler handler) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
@@ -108,10 +96,17 @@ public class FlareLane {
             JSONObject data = new JSONObject();
             data.put("isSubscribed", isSubscribed);
 
-            com.flarelane.DeviceService.update(projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
+            com.flarelane.DeviceService.update(context, projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
                 @Override
                 public void onSuccess(com.flarelane.Device device) {
-
+                    if (handler != null) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                handler.onSuccess(device.isSubscribed);
+                            }
+                        });
+                    }
                 }
             });
         } catch (Exception e) {
@@ -127,7 +122,7 @@ public class FlareLane {
             JSONObject data = new JSONObject();
             data.put("userId", userId == null ? JSONObject.NULL : userId);
 
-            com.flarelane.DeviceService.update(projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
+            com.flarelane.DeviceService.update(context, projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
                 @Override
                 public void onSuccess(com.flarelane.Device device) {
                     BaseSharedPreferences.setUserId(context, device.userId);
@@ -138,7 +133,7 @@ public class FlareLane {
         }
     }
 
-    public static void getTags(Context context, final GetTagsHandler getTagsHandler) {
+    public static void getTags(Context context, @NonNull GetTagsHandler getTagsHandler) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
@@ -146,12 +141,14 @@ public class FlareLane {
             com.flarelane.DeviceService.getTags(projectId, deviceId, new com.flarelane.DeviceService.TagsResponseHandler() {
                 @Override
                 public void onSuccess(JSONObject tags) {
-                    if (getTagsHandler == null) {
-                        Logger.error("'getTags' called with null GetTagsHandler.");
-                        return;
+                    if (getTagsHandler != null) {
+                        mainHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                getTagsHandler.onReceiveTags(tags);
+                            }
+                        });
                     }
-
-                    getTagsHandler.onReceiveTags(tags);
                 }
             });
         } catch (Exception e) {
@@ -167,7 +164,7 @@ public class FlareLane {
             JSONObject data = new JSONObject();
             data.put("tags", tags);
 
-            com.flarelane.DeviceService.update(projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
+            com.flarelane.DeviceService.update(context, projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
                 @Override
                 public void onSuccess(com.flarelane.Device device) {
 
@@ -200,6 +197,84 @@ public class FlareLane {
         return null;
     }
 
+    public static boolean isSubscribed(Context context) {
+        try {
+            // As cannot controlled, not check targetSdkVersion.
+            boolean hasPermission = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ? ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED : true;
+            String savedIsSubscribed = com.flarelane.BaseSharedPreferences.getIsSubscribed(context, true);
+
+            return hasPermission && savedIsSubscribed != null && savedIsSubscribed.contentEquals("true");
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+        return false;
+    }
+
+    public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
+
+                Application application = (Application) context.getApplicationContext();
+                int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
+
+                // If targetSdkVersion < Build.VERSION_CODES.TIRAMISU, must go to settings.
+                if (targetSdkVersion < Build.VERSION_CODES.TIRAMISU ||
+                        (fallbackToSettings && BaseSharedPreferences.getAlreadyPermissionAsked(context))) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent = new Intent();
+                            intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            intent.putExtra("android.provider.extra.APP_PACKAGE", context.getPackageName());
+                            context.startActivity(intent);
+                        }
+                    }).start();
+                } else {
+                    requestPermissionForNotifications(context);
+                }
+            } else {
+                updatePushToken(context, new UpdatePushTokenHandler() {
+                    @Override
+                    public void onSuccess(String pushToken) {
+                        FlareLane.setIsSubscribed(context, true, new IsSubscribedHandler() {
+                            @Override
+                            public void onSuccess(boolean isSubscribed) {
+                                if (handler != null) {
+                                    mainHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            handler.onSuccess(isSubscribed);
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
+
+    public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
+        FlareLane.setIsSubscribed(context, false, new IsSubscribedHandler() {
+            @Override
+            public void onSuccess(boolean isSubscribed) {
+                if (handler != null) {
+                    mainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            handler.onSuccess(isSubscribed);
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     public static void trackEvent(Context context, String type, JSONObject data) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
@@ -215,9 +290,14 @@ public class FlareLane {
         }
     }
 
-    protected static void initDevice(Context context) {
+    protected static void updatePushToken(Context context, @Nullable UpdatePushTokenHandler handler) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
+                Logger.verbose("updatePushToken failed: Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU, but POST_NOTIFICATIONS is not granted!");
+                return;
+            }
 
             RemoteParamsManager.fetchRemoteParams(projectId, new RemoteParamsManager.ResponseHandler() {
                 @Override
@@ -227,9 +307,6 @@ public class FlareLane {
                             Logger.error("senderId is null. Please check a property of your project");
                             return;
                         }
-
-                        String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
-                        String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, true);
 
                         Task<String> getTokenTask = FirebaseManager.getFirebaseMessaging(context, remoteParams).getToken();
                         getTokenTask.addOnCompleteListener(new OnCompleteListener<String>() {
@@ -250,18 +327,27 @@ public class FlareLane {
 
                                     com.flarelane.Logger.verbose("FirebaseMessaging.getInstance().getToken() is Completed");
 
+                                    String savedPushToken = com.flarelane.BaseSharedPreferences.getPushToken(context, true);
                                     if (savedPushToken == null || !savedPushToken.contentEquals(token)) {
-                                        com.flarelane.Logger.verbose("new PushToken is saved");
-                                        com.flarelane.BaseSharedPreferences.setPushToken(context, token);
-                                    }
+                                        String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+                                        String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+                                        JSONObject data = new JSONObject();
+                                        data.put("pushToken", token);
 
-                                    if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
-                                        com.flarelane.Logger.verbose("savedDeviceId is not exists, newly registered");
-                                        com.flarelane.DeviceService.register(context, projectId, token);
+                                        com.flarelane.DeviceService.update(context, projectId, deviceId, data, new com.flarelane.DeviceService.ResponseHandler() {
+                                            @Override
+                                            public void onSuccess(com.flarelane.Device device) {
+                                                com.flarelane.Logger.verbose("new PushToken is saved");
+                                                com.flarelane.BaseSharedPreferences.setPushToken(context, token);
+
+                                                if (handler != null)
+                                                    handler.onSuccess(token);
+                                            }
+                                        });
                                     } else {
-                                        com.flarelane.Logger.verbose("savedDeviceId is exists : " + savedDeviceId);
+                                        if (handler != null)
+                                            handler.onSuccess(token);
                                     }
-
                                 } catch (Exception e) {
                                     com.flarelane.BaseErrorHandler.handle(e);
                                 }
@@ -277,7 +363,67 @@ public class FlareLane {
         }
     }
 
+    protected static void requestPermissionForNotifications(Context context) {
+        Application application = (Application) context.getApplicationContext();
+        int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                targetSdkVersion >= Build.VERSION_CODES.TIRAMISU &&
+                !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
+            // Ask a permission if Android 13
+            Intent intent = new Intent(context, PermissionActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } else {
+            updatePushToken(context, null);
+        }
+    }
+
+    protected static void deviceRegisterOrActivate(Context context) {
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
+            if (projectId == null || projectId.trim().isEmpty()) return;
+
+            // Execute only once.
+            if (!Helper.appInForeground(context) || isActivated) return;
+            isActivated = true;
+
+            String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+            if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
+                com.flarelane.Logger.verbose("savedDeviceId is not exists, newly registered");
+                com.flarelane.DeviceService.register(context, projectId, new DeviceService.ResponseHandler() {
+                    @Override
+                    public void onSuccess(Device device) {
+                        if (com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                            com.flarelane.FlareLane.requestPermissionForNotifications(context);
+                        }
+                    }
+                });
+            } else {
+                com.flarelane.Logger.verbose("savedDeviceId is exists : " + savedDeviceId);
+                com.flarelane.DeviceService.activate(context, projectId, savedDeviceId, new DeviceService.ResponseHandler() {
+                    @Override
+                    public void onSuccess(Device device) {
+                        if (com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                            com.flarelane.FlareLane.requestPermissionForNotifications(context);
+                        }
+                    }
+                });
+            }
+        } catch (Exception e) {
+            BaseErrorHandler.handle(e);
+        }
+    }
+
     public interface GetTagsHandler {
         void onReceiveTags(JSONObject tags);
+    }
+
+    public interface IsSubscribedHandler {
+        void onSuccess(boolean isSubscribed);
+    }
+
+    protected interface UpdatePushTokenHandler {
+        void onSuccess(String pushToken);
     }
 }

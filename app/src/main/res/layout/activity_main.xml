@@ -7,19 +7,13 @@
     tools:context=".MainActivity">
 
     <LinearLayout
-        android:layout_width="409dp"
-        android:layout_height="300dp"
+        android:layout_width="match_parent"
+        android:layout_height="600dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
-        <Button
-            android:id="@+id/setIsSubscribedButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Toggle IsSubscribed" />
 
         <Button
             android:id="@+id/setUserIdButton"
@@ -50,6 +44,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Track Event (test_event)" />
+
+        <Button
+            android:id="@+id/isSubscribedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="isSubscribed" />
+
+        <Button
+            android:id="@+id/subscribeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="subscribe" />
+
+        <Button
+            android:id="@+id/unsubscribeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="unsubscribe" />
 
     </LinearLayout>
 

@@ -1,12 +1,5 @@
 package com.flarelane.example;
 
-import androidx.activity.result.ActivityResultCaller;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -16,7 +9,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
 import com.flarelane.FlareLane;
+import com.flarelane.Notification;
+import com.flarelane.NotificationConvertedHandler;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -47,17 +48,6 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         Context context = this;
-
-        Button setIsSubscribedButton = findViewById(R.id.setIsSubscribedButton);
-        setIsSubscribedButton.setOnClickListener(new View.OnClickListener() {
-            boolean isSubscribed = true;
-
-            @Override
-            public void onClick(View v) {
-                FlareLane.setIsSubscribed(context, isSubscribed);
-                isSubscribed = !isSubscribed;
-            }
-        });
 
         Button setUserId = findViewById(R.id.setUserIdButton);
         setUserId.setOnClickListener(new View.OnClickListener() {
@@ -124,6 +114,41 @@ public class MainActivity extends AppCompatActivity {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            }
+        });
+
+        Button isSubscribedButton = findViewById(R.id.isSubscribedButton);
+        isSubscribedButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                boolean isSubscribed = FlareLane.isSubscribed(context);
+                Log.d("FlareLane", "isSubscribed(): " + isSubscribed);
+            }
+        });
+
+        Button subscribeButton = findViewById(R.id.subscribeButton);
+        subscribeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FlareLane.subscribe(context, true, new FlareLane.IsSubscribedHandler() {
+                    @Override
+                    public void onSuccess(boolean isSubscribed) {
+                        Log.d("FlareLane", "subscribe(): " + isSubscribed);
+                    }
+                });
+            }
+        });
+
+        Button unsubscribeButton = findViewById(R.id.unsubscribeButton);
+        unsubscribeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FlareLane.unsubscribe(context, new FlareLane.IsSubscribedHandler() {
+                    @Override
+                    public void onSuccess(boolean isSubscribed) {
+                        Log.d("FlareLane", "unsubscribe(): " + isSubscribed);
+                    }
+                });
             }
         });
     }
