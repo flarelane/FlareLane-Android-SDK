@@ -13,7 +13,8 @@ class ChannelManager {
     }
 
     protected static String getChannelName(Context context) {
-        return context.getString(R.string.default_notification_channel_name);
+        String customChannelName = Helper.getResourceString(context.getApplicationContext(), "flarelane_default_channel_name");
+        return customChannelName != null ? customChannelName : context.getString(R.string.default_notification_channel_name);
     }
 
     protected static void createNotificationChannel(Context context) {

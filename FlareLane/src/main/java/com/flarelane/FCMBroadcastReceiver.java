@@ -4,6 +4,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -110,15 +111,14 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
                 .setPriority(NotificationCompat.PRIORITY_MAX)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
-
-        if (com.flarelane.NotificationManager.accentColor != null) {
-            try {
-                builder = builder.setColor(Color.parseColor(com.flarelane.NotificationManager.accentColor));
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
+        try {
+            String accentColor = Helper.getResourceString(context.getApplicationContext(), "flarelane_notification_accent_color");
+            if (accentColor != null) {
+                builder = builder.setColor(Color.parseColor(accentColor));
             }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
         }
-
 
         if (image != null) {
             builder = builder
