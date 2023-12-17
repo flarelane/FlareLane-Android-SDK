@@ -17,7 +17,6 @@ import androidx.core.content.ContextCompat;
 
 import com.flarelane.FlareLane;
 import com.flarelane.Notification;
-import com.flarelane.NotificationConvertedHandler;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;

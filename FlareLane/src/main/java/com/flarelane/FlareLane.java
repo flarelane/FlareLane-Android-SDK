@@ -30,12 +30,14 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.4.1";
+        public static String version = "1.5.0";
     }
 
-    protected static com.flarelane.NotificationConvertedHandler notificationConvertedHandler = null;
+    protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
+    protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
+    private static Context applicationContext = null;
     private static Handler mainHandler = new Handler(Looper.getMainLooper());
     private static boolean isActivated = false;
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
@@ -43,6 +45,7 @@ public class FlareLane {
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
+            FlareLane.applicationContext = context;
             FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
             com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
             com.flarelane.ChannelManager.createNotificationChannel(context);
@@ -76,15 +79,22 @@ public class FlareLane {
         }
     }
 
-    public static void setNotificationConvertedHandler(com.flarelane.NotificationConvertedHandler notificationConvertedHandler) {
+    public static void setNotificationClickedHandler(com.flarelane.NotificationClickedHandler handler) {
         try {
-            FlareLane.notificationConvertedHandler = notificationConvertedHandler;
+            FlareLane.notificationClickedHandler = handler;
 
-            if (EventService.unhandledConvertedNotification != null) {
-                notificationConvertedHandler.onConverted(EventService.unhandledConvertedNotification);
-                EventService.unhandledConvertedNotification = null;
+            if (EventService.unhandledClickedNotification != null) {
+                handler.onClicked(EventService.unhandledClickedNotification);
+                EventService.unhandledClickedNotification = null;
             }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
 
+    public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
+        try {
+            FlareLane.notificationForegroundReceivedHandler = notificationForegroundReceivedHandler;
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -423,6 +433,10 @@ public class FlareLane {
 
     public interface IsSubscribedHandler {
         void onSuccess(boolean isSubscribed);
+    }
+
+    public static Context getApplicationContext() {
+        return applicationContext;
     }
 
     protected interface UpdatePushTokenHandler {
