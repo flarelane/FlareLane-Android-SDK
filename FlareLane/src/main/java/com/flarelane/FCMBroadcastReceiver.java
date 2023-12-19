@@ -83,15 +83,15 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
             EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
         }
 
+        NotificationReceivedEvent event = new NotificationReceivedEvent(flarelaneNotification);
+
         if (isForeground && FlareLane.notificationForegroundReceivedHandler != null) {
             Logger.verbose("notificationForegroundReceivedHandler exists, you can control the display timing.");
-
-            NotificationReceivedEvent event = new NotificationReceivedEvent(flarelaneNotification);
             FlareLane.notificationForegroundReceivedHandler.onWillDisplay(event);
             return;
         }
 
-        flarelaneNotification.display();
+        event.display();
     }
 
     private JSONObject bundleAsJSONObject(Bundle bundle) {

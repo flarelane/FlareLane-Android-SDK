@@ -12,7 +12,7 @@ import com.flarelane.NotificationReceivedEvent;
 import org.json.JSONObject;
 
 public class MainApplication extends Application {
-    private static final String FLARELANE_PROJECT_ID = "PROJECT_ID";
+    private static final String FLARELANE_PROJECT_ID = "FLARELANE_PROJECT_ID";
 
     @Override
     public void onCreate() {
@@ -39,7 +39,7 @@ public class MainApplication extends Application {
                     boolean dismissForegroundNotification = data.has(dismissForegroundNotificationKey) ? data.getString(dismissForegroundNotificationKey).contentEquals("true") : false;
                     if (dismissForegroundNotification) return;
 
-                    notification.display();
+                    notificationReceivedEvent.display();
                 } catch (Exception e) {}
             }
         }));
