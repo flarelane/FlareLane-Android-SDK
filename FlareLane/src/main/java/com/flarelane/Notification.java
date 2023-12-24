@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Random;
 
 public class Notification {
@@ -77,5 +78,17 @@ public class Notification {
                 ", imageUrl='" + imageUrl + '\'' +
                 ", data='" + data + '\'' +
                 '}';
+    }
+
+    public HashMap<String, Object> toHashMap() {
+        HashMap<String, Object> hash = new HashMap<>();
+        hash.put("id", id);
+        hash.put("title", title);
+        hash.put("body", body);
+        hash.put("url", url);
+        hash.put("imageUrl", imageUrl);
+        hash.put("data", data);
+
+        return hash;
     }
 }
