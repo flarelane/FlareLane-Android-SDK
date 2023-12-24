@@ -87,6 +87,8 @@ public class FlareLane {
                 handler.onClicked(EventService.unhandledClickedNotification);
                 EventService.unhandledClickedNotification = null;
             }
+
+            Logger.verbose("NotificationClickedHandler has been registered.");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -95,6 +97,7 @@ public class FlareLane {
     public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
         try {
             FlareLane.notificationForegroundReceivedHandler = notificationForegroundReceivedHandler;
+            Logger.verbose("NotificationForegroundReceivedHandler has been registered.");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
