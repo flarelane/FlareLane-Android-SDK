@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Bundle;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
@@ -90,5 +91,17 @@ public class Notification {
         hash.put("data", data);
 
         return hash;
+    }
+
+    public Bundle toBundle() {
+        Bundle bundle = new Bundle();
+        bundle.putString("id", id);
+        bundle.putString("title", title);
+        bundle.putString("body", body);
+        bundle.putString("url", url);
+        bundle.putString("imageUrl", imageUrl);
+        bundle.putString("data", data);
+
+        return bundle;
     }
 }
