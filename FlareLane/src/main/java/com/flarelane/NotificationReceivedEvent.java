@@ -19,9 +19,11 @@ import java.util.Date;
 import java.util.Random;
 
 public class NotificationReceivedEvent {
+    private Context context;
     private Notification notification;
 
-    public NotificationReceivedEvent(Notification notification) {
+    public NotificationReceivedEvent(Context context, Notification notification) {
+        this.context = context;
         this.notification = notification;
     }
 
@@ -30,7 +32,6 @@ public class NotificationReceivedEvent {
     }
 
     public void display() {
-        Context context = FlareLane.getApplicationContext();
         Notification flarelaneNotification = this.getNotification();
         new Thread(new Runnable() {
             @Override

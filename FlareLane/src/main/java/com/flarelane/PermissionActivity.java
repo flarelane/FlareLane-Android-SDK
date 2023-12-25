@@ -42,12 +42,7 @@ public class PermissionActivity extends Activity {
         switch (requestCode) {
             case 419:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    FlareLane.updatePushToken(getApplicationContext(), new FlareLane.UpdatePushTokenHandler() {
-                        @Override
-                        public void onSuccess(String pushToken) {
-
-                        }
-                    });
+                    FlareLane.subscribeWithPushToken(getApplicationContext(), null);
                 }
         }
 
