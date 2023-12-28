@@ -63,9 +63,6 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
         Notification flarelaneNotification = new Notification(jsonObject);
         com.flarelane.Logger.verbose("Message data payload: " + flarelaneNotification.toString());
 
-        String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-        String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-
         boolean isForeground = (Helper.appInForeground(context));
         com.flarelane.Logger.verbose("onMessageReceived isForeground: " + isForeground);
 
@@ -75,12 +72,6 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
         if (isForeground && dismissForegroundNotification) {
             Logger.verbose("notification dismissed cause flarelane_dismiss_foreground_notification is true.");
             return;
-        }
-
-        if (isForeground) {
-            EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
-        } else {
-            EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
         }
 
         NotificationReceivedEvent event = new NotificationReceivedEvent(context.getApplicationContext(), flarelaneNotification);

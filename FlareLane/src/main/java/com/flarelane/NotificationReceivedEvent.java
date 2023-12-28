@@ -32,77 +32,94 @@ public class NotificationReceivedEvent {
     }
 
     public void display() {
-        Notification flarelaneNotification = this.getNotification();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
-                            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                            .putExtra("title", flarelaneNotification.title)
-                            .putExtra("body", flarelaneNotification.body)
-                            .putExtra("url", flarelaneNotification.url)
-                            .putExtra("imageUrl", flarelaneNotification.imageUrl)
-                            .putExtra("data", flarelaneNotification.data)
-                            .putExtra("notificationId", flarelaneNotification.id);
-                    PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
+        try {
+            Notification flarelaneNotification = this.getNotification();
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
-                    int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
+            boolean isForeground = (Helper.appInForeground(context));
 
-                    Bitmap image = null;
-                    if (flarelaneNotification.imageUrl != null) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
+                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                                .putExtra("title", flarelaneNotification.title)
+                                .putExtra("body", flarelaneNotification.body)
+                                .putExtra("url", flarelaneNotification.url)
+                                .putExtra("imageUrl", flarelaneNotification.imageUrl)
+                                .putExtra("data", flarelaneNotification.data)
+                                .putExtra("notificationId", flarelaneNotification.id);
+                        PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
+
+                        int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
+
+                        Bitmap image = null;
+                        if (flarelaneNotification.imageUrl != null) {
+                            try {
+                                URL url = new URL(flarelaneNotification.imageUrl);
+                                InputStream in;
+                                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                                connection.setDoInput(true);
+                                connection.connect();
+                                in = connection.getInputStream();
+                                image = BitmapFactory.decodeStream(in);
+                            } catch (Exception e) {
+                                com.flarelane.BaseErrorHandler.handle(e);
+                            }
+                        }
+
+                        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ChannelManager.getDefaultChannelId())
+                                .setSmallIcon(getNotificationIcon(context))
+                                .setContentText(flarelaneNotification.body)
+                                .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
+                                .setAutoCancel(true)
+                                .setContentIntent(contentIntent)
+                                .setPriority(NotificationCompat.PRIORITY_MAX)
+                                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
                         try {
-                            URL url = new URL(flarelaneNotification.imageUrl);
-                            InputStream in;
-                            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                            connection.setDoInput(true);
-                            connection.connect();
-                            in = connection.getInputStream();
-                            image = BitmapFactory.decodeStream(in);
+                            String accentColor = Helper.getResourceString(context.getApplicationContext(), "flarelane_notification_accent_color");
+                            if (accentColor != null) {
+                                builder = builder.setColor(Color.parseColor(accentColor));
+                            }
                         } catch (Exception e) {
                             com.flarelane.BaseErrorHandler.handle(e);
                         }
-                    }
 
-                    NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ChannelManager.getDefaultChannelId())
-                            .setSmallIcon(getNotificationIcon(context))
-                            .setContentText(flarelaneNotification.body)
-                            .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
-                            .setAutoCancel(true)
-                            .setContentIntent(contentIntent)
-                            .setPriority(NotificationCompat.PRIORITY_MAX)
-                            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+                        if (image != null) {
+                            builder = builder
+                                    .setLargeIcon(image)
+                                    .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon(null).setSummaryText(flarelaneNotification.body));
+                        } else {
+                            builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
+                        }
 
-                    try {
-                        String accentColor = Helper.getResourceString(context.getApplicationContext(), "flarelane_notification_accent_color");
-                        if (accentColor != null) {
-                            builder = builder.setColor(Color.parseColor(accentColor));
+                        android.app.Notification notification = builder.build();
+
+                        notification.defaults|= android.app.Notification.DEFAULT_SOUND;
+                        notification.defaults|= android.app.Notification.DEFAULT_LIGHTS;
+                        notification.defaults|= android.app.Notification.DEFAULT_VIBRATE;
+
+                        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                        notificationManager.notify((int) new Date().getTime(), notification);
+
+
+                        if (isForeground) {
+                            EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
+                        } else {
+                            EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
                         }
                     } catch (Exception e) {
                         com.flarelane.BaseErrorHandler.handle(e);
                     }
-
-                    if (image != null) {
-                        builder = builder
-                                .setLargeIcon(image)
-                                .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon(null).setSummaryText(flarelaneNotification.body));
-                    } else {
-                        builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
-                    }
-
-                    android.app.Notification notification = builder.build();
-
-                    notification.defaults|= android.app.Notification.DEFAULT_SOUND;
-                    notification.defaults|= android.app.Notification.DEFAULT_LIGHTS;
-                    notification.defaults|= android.app.Notification.DEFAULT_VIBRATE;
-
-                    NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                    notificationManager.notify((int) new Date().getTime(), notification);
-                } catch (Exception e) {
-                    com.flarelane.BaseErrorHandler.handle(e);
                 }
-            }
-        }).start();
+            }).start();
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+
     }
 
     private int getNotificationIcon(Context context) {
