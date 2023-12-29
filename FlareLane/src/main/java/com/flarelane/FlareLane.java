@@ -52,6 +52,7 @@ public class FlareLane {
             String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
             if (savedProjectId == null || !savedProjectId.contentEquals(projectId)) {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
+                com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
                 com.flarelane.BaseSharedPreferences.setProjectId(context, projectId);
             }
 
