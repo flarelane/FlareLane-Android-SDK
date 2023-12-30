@@ -31,7 +31,6 @@ dependencies {
     implementation project(path: ':FlareLane')
 
     // Build test with other services
-    implementation 'com.onesignal:OneSignal:[5.0.0, 5.99.99]'
     implementation 'com.google.firebase:firebase-messaging:23.1.2'
 
     implementation 'androidx.appcompat:appcompat:1.4.1'

@@ -6,15 +6,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 class EventService {
-    static Notification unhandledConvertedNotification;
+    static Notification unhandledClickedNotification;
 
-    static protected void createConverted(String projectId, String deviceId, Notification notification) throws Exception {
-        EventService.create(projectId, deviceId, notification.id, EventType.Converted);
+    static protected void createClicked(String projectId, String deviceId, Notification notification) throws Exception {
+        EventService.create(projectId, deviceId, notification.id, EventType.Clicked);
 
-        if (com.flarelane.FlareLane.notificationConvertedHandler != null) {
-            com.flarelane.FlareLane.notificationConvertedHandler.onConverted(notification);
+        if (FlareLane.notificationClickedHandler != null) {
+            FlareLane.notificationClickedHandler.onClicked(notification);
         } else {
-            EventService.unhandledConvertedNotification = notification;
+            EventService.unhandledClickedNotification = notification;
         }
     }
 

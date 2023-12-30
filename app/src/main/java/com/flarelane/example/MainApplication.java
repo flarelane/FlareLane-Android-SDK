@@ -5,15 +5,14 @@ import android.util.Log;
 
 import com.flarelane.FlareLane;
 import com.flarelane.Notification;
-import com.flarelane.NotificationConvertedHandler;
-import com.flarelane.NotificationManager;
-import com.onesignal.Continue;
-import com.onesignal.OneSignal;
+import com.flarelane.NotificationClickedHandler;
+import com.flarelane.NotificationForegroundReceivedHandler;
+import com.flarelane.NotificationReceivedEvent;
 
+import org.json.JSONObject;
 
 public class MainApplication extends Application {
     private static final String FLARELANE_PROJECT_ID = "FLARELANE_PROJECT_ID";
-    private static final String ONESIGNAL_APP_ID = "ONESIGNAL_APP_ID";
 
     @Override
     public void onCreate() {
@@ -21,15 +20,29 @@ public class MainApplication extends Application {
 
         FlareLane.setLogLevel(Log.VERBOSE);
         FlareLane.initWithContext(this, FLARELANE_PROJECT_ID, false);
-        NotificationManager.accentColor = "#1D4289";
-        FlareLane.setNotificationConvertedHandler(new NotificationConvertedHandler() {
+        FlareLane.setNotificationClickedHandler(new NotificationClickedHandler() {
             @Override
-            public void onConverted(Notification notification) {
-                Log.d("FlareLane", "onConverted: " + notification.toString());
+            public void onClicked(Notification notification) {
+                Log.d("FlareLane", "NotificationClickedHandler.onClicked: " + notification.toString());
             }
         });
 
-        OneSignal.initWithContext(this, ONESIGNAL_APP_ID);
+        FlareLane.setNotificationForegroundReceivedHandler((new NotificationForegroundReceivedHandler() {
+            @Override
+            public void onWillDisplay(NotificationReceivedEvent notificationReceivedEvent) {
+                Notification notification = notificationReceivedEvent.getNotification();
+                Log.d("FlareLane", "NotificationForegroundReceivedHandler.onWillDisplay: " + notification.toString());
+
+                try {
+                    JSONObject data = new JSONObject(notification.data);
+                    String dismissForegroundNotificationKey = "dismiss_foreground_notification";
+                    boolean dismissForegroundNotification = data.has(dismissForegroundNotificationKey) ? data.getString(dismissForegroundNotificationKey).contentEquals("true") : false;
+                    if (dismissForegroundNotification) return;
+
+                    notificationReceivedEvent.display();
+                } catch (Exception e) {}
+            }
+        }));
     }
 
 }

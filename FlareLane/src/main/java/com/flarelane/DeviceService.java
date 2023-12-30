@@ -48,12 +48,12 @@ class DeviceService {
         }
     }
 
-    static void activate(Context context, String projectId, String deviceId, @Nullable ResponseHandler responseHandler) {
+    static void activate(Context context, @Nullable ResponseHandler responseHandler) {
         try {
             JSONObject data = getSystemInfo();
             data.put("lastActiveAt", Utils.getISO8601DateString());
 
-            DeviceService.update(context, projectId, deviceId, data, new ResponseHandler() {
+            DeviceService.update(context, data, new ResponseHandler() {
                 @Override
                 public void onSuccess(Device device) {
                     if (responseHandler != null)
@@ -108,7 +108,10 @@ class DeviceService {
         });
     }
 
-    static void update(Context context, String projectId, String deviceId, JSONObject data, @Nullable ResponseHandler handler) {
+    static void update(Context context, JSONObject data, @Nullable ResponseHandler handler) throws Exception {
+        String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+        String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+
         HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
             @Override
             void onSuccess(int responseCode, JSONObject response) {

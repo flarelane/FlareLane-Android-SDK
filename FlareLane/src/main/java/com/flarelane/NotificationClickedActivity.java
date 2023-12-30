@@ -6,7 +6,7 @@ import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 
-public class NotificationConvertedActivity extends Activity {
+public class NotificationClickedActivity extends Activity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         try {
@@ -27,7 +27,7 @@ public class NotificationConvertedActivity extends Activity {
                         getIntent().getStringExtra("imageUrl")
                 );
 
-                EventService.createConverted(projectId, deviceId, notification);
+                EventService.createClicked(projectId, deviceId, notification);
 
                 startLaunchActivityIfNoHistory();
             }
