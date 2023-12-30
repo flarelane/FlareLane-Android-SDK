@@ -1,5 +1,5 @@
 package com.flarelane;
 
 public interface NotificationForegroundReceivedHandler {
-    void onWillDisplay(NotificationReceivedEvent notificationReceivedEvent);
+    void onWillDisplay(NotificationReceivedEvent event);
 }
