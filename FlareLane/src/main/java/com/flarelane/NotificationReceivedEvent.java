@@ -91,16 +91,16 @@ public class NotificationReceivedEvent {
                         if (image != null) {
                             builder = builder
                                     .setLargeIcon(image)
-                                    .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).setSummaryText(flarelaneNotification.body));
+                                    .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon((Bitmap) null).setSummaryText(flarelaneNotification.body));
                         } else {
                             builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
                         }
 
                         android.app.Notification notification = builder.build();
 
-                        notification.defaults|= android.app.Notification.DEFAULT_SOUND;
-                        notification.defaults|= android.app.Notification.DEFAULT_LIGHTS;
-                        notification.defaults|= android.app.Notification.DEFAULT_VIBRATE;
+                        notification.defaults |= android.app.Notification.DEFAULT_SOUND;
+                        notification.defaults |= android.app.Notification.DEFAULT_LIGHTS;
+                        notification.defaults |= android.app.Notification.DEFAULT_VIBRATE;
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify((int) new Date().getTime(), notification);
