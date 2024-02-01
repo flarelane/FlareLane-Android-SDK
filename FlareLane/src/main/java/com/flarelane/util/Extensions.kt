@@ -21,7 +21,7 @@ fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
     try {
         jsonObject = this?.let { JSONObject(it) }
     } catch (e: JSONException) {
-        Logger.error("toJSONObjectOrNull() error, e=$e")
+        Logger.error("toJSONObjectWithNull() error, e=$e")
         return
     }
     run.invoke(jsonObject)
