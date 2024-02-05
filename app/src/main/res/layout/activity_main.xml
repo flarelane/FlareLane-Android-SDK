@@ -18,7 +18,7 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="?attr/actionBarSize"
             android:background="@color/purple_500"
             app:layout_constraintTop_toTopOf="parent"
             app:title="@string/app_name"
@@ -77,6 +77,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="WebView Bridge Test" />
+
+        <Button
+            android:id="@+id/btn_test_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show test notification" />
 
     </LinearLayout>
 
