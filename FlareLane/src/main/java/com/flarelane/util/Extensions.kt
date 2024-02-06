@@ -1,5 +1,10 @@
 package com.flarelane.util
 
+import android.annotation.SuppressLint
+import android.content.res.Configuration
+import android.webkit.WebView
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import com.flarelane.Logger
 import org.json.JSONException
 import org.json.JSONObject
@@ -25,4 +30,26 @@ fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
         return
     }
     run.invoke(jsonObject)
+}
+
+@SuppressLint("RequiresFeature")
+fun WebView.setAlgorithmicDarkeningAllow() {
+    try {
+        WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, true)
+    } catch (_: Exception) {
+        try {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
+                    Configuration.UI_MODE_NIGHT_YES -> {
+                        WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_ON)
+                    }
+
+                    Configuration.UI_MODE_NIGHT_NO, Configuration.UI_MODE_NIGHT_UNDEFINED -> {
+                        WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_OFF)
+                    }
+                }
+            }
+        } catch (_: Exception) {
+        }
+    }
 }

@@ -6,7 +6,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
-import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -14,14 +13,14 @@ import android.webkit.WebViewClient
 import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import com.flarelane.Logger
 import com.flarelane.R
+import com.flarelane.util.setAlgorithmicDarkeningAllow
 
-internal class FlareLaneWebViewActivity: AppCompatActivity() {
+internal class FlareLaneWebViewActivity : AppCompatActivity() {
 
     private lateinit var progressBar: ProgressBar
 
-    @SuppressLint("MissingInflatedId", "SetJavaScriptEnabled")
+    @SuppressLint("MissingInflatedId", "SetJavaScriptEnabled", "RequiresFeature")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val loadUrl = if (intent.hasExtra(LOAD_URL)) {
@@ -46,17 +45,22 @@ internal class FlareLaneWebViewActivity: AppCompatActivity() {
         progressBar = findViewById(R.id.progress_bar)
 
         with(webView) {
-            settings.cacheMode = WebSettings.LOAD_NO_CACHE
-            settings.javaScriptEnabled = true
-            settings.javaScriptCanOpenWindowsAutomatically = true
-            settings.domStorageEnabled = true
-            settings.allowFileAccess = true
-            settings.loadWithOverviewMode = true
-            settings.builtInZoomControls = true
-            settings.displayZoomControls = false
+            setAlgorithmicDarkeningAllow()
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
         }
+
+        with(webView.settings) {
+            cacheMode = WebSettings.LOAD_NO_CACHE
+            javaScriptEnabled = true
+            javaScriptCanOpenWindowsAutomatically = true
+            domStorageEnabled = true
+            loadWithOverviewMode = true
+            builtInZoomControls = true
+            allowFileAccess = false
+            displayZoomControls = false
+        }
+
         println(webView.settings.userAgentString)
         webView.loadUrl(loadUrl)
     }
