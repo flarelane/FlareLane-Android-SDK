@@ -54,7 +54,6 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
             return;
         }
 
-        com.flarelane.Logger.verbose("notification: " + jsonObject);
         String isFlareLane = jsonObject.optString("isFlareLane");
         if (isFlareLane == null || !isFlareLane.contentEquals("true")) {
             Logger.verbose("It is not a message of FlareLane");

@@ -26,7 +26,7 @@ class HTTPClient {
         }
     }
 
-    private static final String BASE_URL = "https://staging-service-api.flarelane.com/";
+    private static final String BASE_URL = "https://service-api.flarelane.com/";
 
     public static void get(String path, @Nullable ResponseHandler responseHandler) {
         new Thread(new Runnable() {
