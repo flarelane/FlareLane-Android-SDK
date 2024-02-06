@@ -14,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.flarelane.FlareLane
-import com.flarelane.webview.jsinterface.FlareLaneWebViewActivity
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import org.json.JSONException
@@ -118,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_test_notification).setOnClickListener {
             val testUrl = "https://www.google.com"
             val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
-            intent.putExtra("notificationId", "123")
+            intent.putExtra("notificationId", "0")
             intent.putExtra("isFlareLane", true)
             intent.putExtra("body", "local test")
             intent.putExtra("url", testUrl)

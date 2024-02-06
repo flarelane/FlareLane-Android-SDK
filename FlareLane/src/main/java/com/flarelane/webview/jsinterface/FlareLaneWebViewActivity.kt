@@ -17,7 +17,7 @@ import androidx.appcompat.widget.Toolbar
 import com.flarelane.Logger
 import com.flarelane.R
 
-class FlareLaneWebViewActivity: AppCompatActivity() {
+internal class FlareLaneWebViewActivity: AppCompatActivity() {
 
     private lateinit var progressBar: ProgressBar
 
@@ -73,13 +73,6 @@ class FlareLaneWebViewActivity: AppCompatActivity() {
 
     private val flWebChromeClient by lazy {
         object : WebChromeClient() {
-            override fun onConsoleMessage(cm: ConsoleMessage): Boolean {
-                Logger.verbose(
-                    "FlareLane WebView log. Line: ${cm.lineNumber()}. SourceId: ${cm.sourceId()}. " +
-                            "Log Level: ${cm.messageLevel()}. ${cm.message()}"
-                )
-                return true
-            }
             override fun getDefaultVideoPoster(): Bitmap {
                 return Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
             }
@@ -107,7 +100,7 @@ class FlareLaneWebViewActivity: AppCompatActivity() {
     companion object {
         private const val LOAD_URL = "load_url"
 
-        fun show(context: Context, url: String) {
+        internal fun show(context: Context, url: String) {
             context.startActivity(
                 Intent(context, FlareLaneWebViewActivity::class.java).also {
                     it.putExtra(LOAD_URL, url)
