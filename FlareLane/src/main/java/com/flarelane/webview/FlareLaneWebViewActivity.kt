@@ -1,23 +1,29 @@
-package com.flarelane.webview.jsinterface
+package com.flarelane.webview
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ProgressBar
+import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.browser.customtabs.CustomTabsIntent
+import com.flarelane.Logger
 import com.flarelane.R
 import com.flarelane.util.setAlgorithmicDarkeningAllow
 
 internal class FlareLaneWebViewActivity : AppCompatActivity() {
-
     private lateinit var progressBar: ProgressBar
 
     @SuppressLint("MissingInflatedId", "SetJavaScriptEnabled", "RequiresFeature")
@@ -53,16 +59,28 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         with(webView.settings) {
             cacheMode = WebSettings.LOAD_NO_CACHE
             javaScriptEnabled = true
-            javaScriptCanOpenWindowsAutomatically = true
             domStorageEnabled = true
+            javaScriptCanOpenWindowsAutomatically = true
             loadWithOverviewMode = true
             builtInZoomControls = true
-            allowFileAccess = false
+            allowFileAccess = true
+            databaseEnabled = true
+            useWideViewPort = true
             displayZoomControls = false
+            defaultTextEncodingName = "UTF-8"
         }
 
-        println(webView.settings.userAgentString)
         webView.loadUrl(loadUrl)
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    finish()
+                }
+            }
+        })
     }
 
     override fun finish() {
@@ -89,6 +107,30 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
 
     private val flWebViewClient by lazy {
         object : WebViewClient() {
+            @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
+                return shouldOverrideUrlLoading(request.url)
+            }
+
+            @Deprecated(
+                "Deprecated in Java", ReplaceWith(
+                    "super.shouldOverrideUrlLoading(view, url)",
+                    "android.webkit.WebViewClient"
+                )
+            )
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean {
+                return try {
+                    val uri = Uri.parse(url)
+                    shouldOverrideUrlLoading(uri)
+                } catch (e: Exception) {
+                    Logger.error("WebView error, e=$e")
+                    false
+                }
+            }
+
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 progressBar.visibility = View.VISIBLE
@@ -98,6 +140,18 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 progressBar.visibility = View.GONE
             }
+
+            private fun shouldOverrideUrlLoading(url: Uri) =
+                when (url.scheme) {
+                    null, "http", "https" -> false
+                    else -> {
+                        CustomTabsIntent.Builder().build().launchUrl(
+                            this@FlareLaneWebViewActivity,
+                            url
+                        )
+                        true
+                    }
+                }
         }
     }
 

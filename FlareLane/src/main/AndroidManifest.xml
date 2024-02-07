@@ -38,7 +38,7 @@
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
-            android:name=".webview.jsinterface.FlareLaneWebViewActivity"
+            android:name=".webview.FlareLaneWebViewActivity"
             android:exported="false"
             android:hardwareAccelerated="true" />
     </application>

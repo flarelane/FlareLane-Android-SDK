@@ -49,6 +49,12 @@ fun WebView.setAlgorithmicDarkeningAllow() {
                     }
                 }
             }
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+                WebSettingsCompat.setForceDarkStrategy(
+                    settings,
+                    WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY
+                )
+            }
         } catch (_: Exception) {
         }
     }

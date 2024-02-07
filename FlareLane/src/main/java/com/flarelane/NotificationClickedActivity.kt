@@ -2,7 +2,7 @@ package com.flarelane
 
 import android.app.Activity
 import android.os.Bundle
-import com.flarelane.webview.jsinterface.FlareLaneWebViewActivity
+import com.flarelane.webview.FlareLaneWebViewActivity
 
 internal class NotificationClickedActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
