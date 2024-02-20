@@ -2,6 +2,7 @@ package com.flarelane
 
 import android.app.Activity
 import android.os.Bundle
+import com.flarelane.util.IntentUtil
 import com.flarelane.webview.FlareLaneWebViewActivity
 
 internal class NotificationClickedActivity : Activity() {
@@ -40,7 +41,13 @@ internal class NotificationClickedActivity : Activity() {
                 startActivity(launchIntent)
             }
         } else {
-            FlareLaneWebViewActivity.show(this, notification.url!!)
+            IntentUtil.createIntentIfResolveActivity(this, notification.url!!)?.let {
+                try {
+                    startActivity(it)
+                } catch (_: Exception) {
+                    FlareLaneWebViewActivity.show(this, notification.url!!)
+                }
+            } ?: FlareLaneWebViewActivity.show(this, notification.url!!)
         }
     }
 }

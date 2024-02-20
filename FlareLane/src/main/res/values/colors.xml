@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="tint_ic_color">#000</color>
-    <color name="tint_divider_color">#EAEAEA</color>
+    <color name="day_night_background_color">#fff</color>
+    <color name="day_night_ic_color">#000</color>
+    <color name="day_night_divider_color">#EAEAEA</color>
 </resources>

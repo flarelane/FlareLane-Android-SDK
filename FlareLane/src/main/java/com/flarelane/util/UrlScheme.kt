@@ -1,6 +1,6 @@
-package com.flarelane.webview
+package com.flarelane.util
 
-enum class UrlSchemes(val value: String) {
+internal enum class UrlScheme(val value: String) {
     HTTP("http"),
     HTTPS("https"),
     TEL("tel"),
@@ -11,7 +11,7 @@ enum class UrlSchemes(val value: String) {
     CUSTOM("custom");
 
     companion object {
-        fun of(schemeString: String?): UrlSchemes? {
+        fun of(schemeString: String?): UrlScheme? {
             return schemeString?.let {
                 values().find { it.value == schemeString } ?: CUSTOM
             }

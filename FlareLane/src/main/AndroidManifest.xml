@@ -42,5 +42,4 @@
             android:exported="false"
             android:hardwareAccelerated="true" />
     </application>
-
 </manifest>
