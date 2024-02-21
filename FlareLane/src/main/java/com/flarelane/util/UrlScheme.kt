@@ -11,7 +11,7 @@ internal enum class UrlScheme(val value: String) {
     CUSTOM("custom");
 
     companion object {
-        fun of(schemeString: String?): UrlScheme? {
+        internal fun of(schemeString: String?): UrlScheme? {
             return schemeString?.let {
                 values().find { it.value == schemeString } ?: CUSTOM
             }

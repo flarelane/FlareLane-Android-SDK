@@ -2,6 +2,7 @@ package com.flarelane
 
 import android.app.Activity
 import android.os.Bundle
+import com.flarelane.util.AndroidUtils
 import com.flarelane.util.IntentUtil
 import com.flarelane.webview.FlareLaneWebViewActivity
 
@@ -35,12 +36,14 @@ internal class NotificationClickedActivity : Activity() {
 
     private fun handleNotificationClicked(notification: Notification) {
         if (notification.url.isNullOrEmpty()) {
-            if (isTaskRoot) {
-                Logger.verbose("This is last activity in the stack")
-                val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                startActivity(launchIntent)
-            }
+            launchApp()
         } else {
+            if (AndroidUtils.getManifestMetaBoolean(this, Constants.META_NAME_IGNORE_LAUNCH_URLS)) {
+                Logger.verbose("Works natively without automatic URL processing")
+                launchApp()
+                return
+            }
+
             IntentUtil.createIntentIfResolveActivity(this, notification.url!!)?.let {
                 try {
                     startActivity(it)
@@ -48,6 +51,14 @@ internal class NotificationClickedActivity : Activity() {
                     FlareLaneWebViewActivity.show(this, notification.url!!)
                 }
             } ?: FlareLaneWebViewActivity.show(this, notification.url!!)
+        }
+    }
+
+    private fun launchApp() {
+        if (isTaskRoot) {
+            Logger.verbose("This is last activity in the stack")
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            startActivity(launchIntent)
         }
     }
 }
