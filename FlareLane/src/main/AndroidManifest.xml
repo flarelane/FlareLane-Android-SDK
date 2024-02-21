@@ -31,10 +31,13 @@
 
         <activity
             android:name=".NotificationClickedActivity"
+            android:excludeFromRecents="true"
             android:noHistory="true"
+            android:taskAffinity="flarelane.taskAffinity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
             android:name=".PermissionActivity"
+            android:excludeFromRecents="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
@@ -42,4 +45,17 @@
             android:exported="false"
             android:hardwareAccelerated="true" />
     </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 </manifest>

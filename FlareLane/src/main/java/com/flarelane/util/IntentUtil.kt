@@ -3,7 +3,9 @@ package com.flarelane.util
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 
 internal object IntentUtil {
     @SuppressLint("QueryPermissionsNeeded")
@@ -38,6 +40,26 @@ internal object IntentUtil {
                                 resultIntent = intent
                             }
                         }
+                    } else {
+                        val intent = Intent(Intent.ACTION_VIEW, url)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            if (intent.resolveActivity(context.packageManager) == null) {
+                                resultIntent = intent
+                            }
+                        } else {
+                            context.packageManager.queryIntentActivities(
+                                intent,
+                                PackageManager.GET_RESOLVED_FILTER
+                            ).forEach run@{ resolveInfo ->
+                                resolveInfo.filter.authoritiesIterator().forEach {
+                                    if (it.host == url.host) {
+                                        intent.setPackage(resolveInfo.activityInfo.packageName)
+                                        resultIntent = intent
+                                        return@run
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -50,7 +72,9 @@ internal object IntentUtil {
                 }
 
                 UrlScheme.INTENT -> {
-                    resultIntent = Intent.parseUri(url.toString(), Intent.URI_INTENT_SCHEME).also { i ->
+                    resultIntent = Intent.parseUri(
+                        url.toString(), Intent.URI_INTENT_SCHEME
+                    ).also { i ->
                         setPackageFromResolveInfoList(context, i)
                     }
                 }
