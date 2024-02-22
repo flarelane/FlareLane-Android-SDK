@@ -7,13 +7,14 @@ import android.os.Build;
 
 class ChannelManager {
     private static final String DEFAULT_CHANNEL_ID = "com.flarelane.default_notification_channel_id";
+    private static final String DEFAULT_CHANNEL_NAME = "flarelane_default_channel_name";
 
     protected static String getDefaultChannelId() {
         return DEFAULT_CHANNEL_ID;
     }
 
     protected static String getChannelName(Context context) {
-        String customChannelName = Helper.getResourceString(context.getApplicationContext(), "flarelane_default_channel_name");
+        String customChannelName = Helper.getResourceString(context.getApplicationContext(), DEFAULT_CHANNEL_NAME);
         return customChannelName != null ? customChannelName : context.getString(R.string.default_notification_channel_name);
     }
 
