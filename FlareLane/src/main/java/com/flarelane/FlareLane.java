@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.5.0";
+        public static String version = "1.5.1";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -194,9 +194,10 @@ public class FlareLane {
 
     public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
         try {
+            PermissionActivity.isSubscribedHandler = handler;
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
-
                 Application application = (Application) context.getApplicationContext();
                 int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
 
@@ -214,7 +215,7 @@ public class FlareLane {
                         }
                     }).start();
                 } else {
-                    requestPermissionForNotifications(context);
+                    requestPermissionForNotifications(context, handler);
                 }
             } else {
                 subscribeWithPushToken(context, handler);
@@ -262,7 +263,7 @@ public class FlareLane {
         }
     }
 
-    protected static void requestPermissionForNotifications(Context context) {
+    protected static void requestPermissionForNotifications(Context context, @Nullable IsSubscribedHandler handler) {
         Application application = (Application) context.getApplicationContext();
         int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
 
@@ -274,7 +275,7 @@ public class FlareLane {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } else {
-            subscribeWithPushToken(context, null);
+            subscribeWithPushToken(context, handler);
         }
     }
 
@@ -293,8 +294,8 @@ public class FlareLane {
                 com.flarelane.DeviceService.register(context, projectId, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
-                        if (com.flarelane.FlareLane.requestPermissionOnLaunch) {
-                            com.flarelane.FlareLane.requestPermissionForNotifications(context);
+                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                            com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
                         }
                     }
                 });
@@ -303,8 +304,8 @@ public class FlareLane {
                 com.flarelane.DeviceService.activate(context, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
-                        if (com.flarelane.FlareLane.requestPermissionOnLaunch) {
-                            com.flarelane.FlareLane.requestPermissionForNotifications(context);
+                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                            com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
                         }
                     }
                 });
