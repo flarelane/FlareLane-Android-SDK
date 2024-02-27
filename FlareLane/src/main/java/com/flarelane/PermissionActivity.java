@@ -12,6 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 public class PermissionActivity extends Activity {
+    @Nullable
+    static FlareLane.IsSubscribedHandler isSubscribedHandler;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,7 +45,7 @@ public class PermissionActivity extends Activity {
         switch (requestCode) {
             case 419:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    FlareLane.subscribeWithPushToken(getApplicationContext(), null);
+                    FlareLane.subscribeWithPushToken(getApplicationContext(), isSubscribedHandler);
                 }
         }
 
