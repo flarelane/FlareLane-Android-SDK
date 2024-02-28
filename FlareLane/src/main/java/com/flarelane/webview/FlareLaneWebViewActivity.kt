@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Message
 import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
@@ -57,14 +58,10 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
             cacheMode = WebSettings.LOAD_NO_CACHE
             javaScriptEnabled = true
             domStorageEnabled = true
-            javaScriptCanOpenWindowsAutomatically = true
             loadWithOverviewMode = true
-            builtInZoomControls = true
-            databaseEnabled = true
             useWideViewPort = true
-            allowFileAccess = false
-            displayZoomControls = false
-            defaultTextEncodingName = "UTF-8"
+            allowFileAccess = true
+            javaScriptCanOpenWindowsAutomatically = true
         }
 
         webView.loadUrl(loadUrl)
