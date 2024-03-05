@@ -12,6 +12,8 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+import com.flarelane.util.ExtensionsKt;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -44,13 +46,9 @@ public class NotificationReceivedEvent {
                 public void run() {
                     try {
                         Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                .putExtra("title", flarelaneNotification.title)
-                                .putExtra("body", flarelaneNotification.body)
-                                .putExtra("url", flarelaneNotification.url)
-                                .putExtra("imageUrl", flarelaneNotification.imageUrl)
-                                .putExtra("data", flarelaneNotification.data)
-                                .putExtra("notificationId", flarelaneNotification.id);
+                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
+
                         PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
 
                         int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;

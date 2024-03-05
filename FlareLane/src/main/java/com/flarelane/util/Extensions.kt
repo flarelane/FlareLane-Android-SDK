@@ -1,7 +1,10 @@
 package com.flarelane.util
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.Configuration
+import android.os.Build
+import android.os.Parcelable
 import android.webkit.WebView
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
@@ -9,7 +12,7 @@ import com.flarelane.Logger
 import org.json.JSONException
 import org.json.JSONObject
 
-fun String.toJSONObject(run: (JSONObject) -> Unit) {
+internal fun String.toJSONObject(run: (JSONObject) -> Unit) {
     var jsonObject: JSONObject? = null
     try {
         jsonObject = JSONObject(this)
@@ -21,7 +24,7 @@ fun String.toJSONObject(run: (JSONObject) -> Unit) {
     }
 }
 
-fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
+internal fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
     val jsonObject: JSONObject?
     try {
         jsonObject = this?.let { JSONObject(it) }
@@ -33,7 +36,7 @@ fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
 }
 
 @SuppressLint("RequiresFeature")
-fun WebView.setAlgorithmicDarkeningAllow() {
+internal fun WebView.setAlgorithmicDarkeningAllow() {
     try {
         WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, true)
     } catch (_: Exception) {
@@ -57,5 +60,17 @@ fun WebView.setAlgorithmicDarkeningAllow() {
             }
         } catch (_: Exception) {
         }
+    }
+}
+
+internal fun Intent.putParcelableDataClass(clazz: Parcelable) {
+    putExtra(clazz::class.java.simpleName, clazz)
+}
+
+internal fun <T: Parcelable> Intent.getParcelableDataClass(clazz: Class<T>): T? {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableExtra(clazz.simpleName, clazz)
+    } else {
+        getParcelableExtra(clazz.simpleName)
     }
 }

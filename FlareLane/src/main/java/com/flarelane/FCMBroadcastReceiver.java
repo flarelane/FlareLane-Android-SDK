@@ -1,29 +1,15 @@
 package com.flarelane;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import androidx.core.app.NotificationCompat;
 import androidx.legacy.content.WakefulBroadcastReceiver;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Date;
-import java.util.Random;
 import java.util.Set;
 
 public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
@@ -49,28 +35,24 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
 
         JSONObject jsonObject = bundleAsJSONObject(intent.getExtras());
 
-        if (jsonObject == null) {
-            Logger.error("jsonObject is NULL");
-            return;
-        }
-
         String isFlareLane = jsonObject.optString("isFlareLane");
-        if (isFlareLane == null || !isFlareLane.contentEquals("true")) {
+        if (!isFlareLane.contentEquals("true")) {
             Logger.verbose("It is not a message of FlareLane");
             return;
         }
 
         Notification flarelaneNotification = new Notification(jsonObject);
-        com.flarelane.Logger.verbose("Message data payload: " + flarelaneNotification.toString());
+        com.flarelane.Logger.verbose("Message data payload: " + flarelaneNotification);
 
-        boolean isForeground = (Helper.appInForeground(context));
+        boolean isForeground = Helper.appInForeground(context);
         com.flarelane.Logger.verbose("onMessageReceived isForeground: " + isForeground);
 
-        JSONObject data = new JSONObject(flarelaneNotification.data);
-        String dismissForegroundNotificationKey = "flarelane_dismiss_foreground_notification";
-        boolean dismissForegroundNotification = data.has(dismissForegroundNotificationKey) ? data.getString(dismissForegroundNotificationKey).contentEquals("true") : false;
+        JSONObject data = flarelaneNotification.getDataJsonObject();
+        boolean dismissForegroundNotification = data != null &&
+                data.has(Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION) &&
+                data.getBoolean(Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION);
         if (isForeground && dismissForegroundNotification) {
-            Logger.verbose("notification dismissed cause flarelane_dismiss_foreground_notification is true.");
+            Logger.verbose("notification dismissed cause " + Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION + " is true.");
             return;
         }
 
