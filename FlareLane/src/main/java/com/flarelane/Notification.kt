@@ -13,7 +13,7 @@ data class Notification(
     @JvmField val title: String?,
     @JvmField val url: String?,
     @JvmField val imageUrl: String?
-) : Parcelable {
+) : Parcelable, ReflectClass() {
     constructor(jsonObject: JSONObject) : this(
         jsonObject.getString("notificationId"),
         jsonObject.getString("body"),

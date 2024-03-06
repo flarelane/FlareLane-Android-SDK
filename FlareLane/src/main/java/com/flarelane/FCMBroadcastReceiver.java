@@ -49,10 +49,9 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
 
         JSONObject data = flarelaneNotification.getDataJsonObject();
         boolean dismissForegroundNotification = data != null &&
-                data.has(Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION) &&
-                data.getBoolean(Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION);
+                data.optString(Constants.DISMISS_FOREGROUND_NOTIFICATION).equals("true");
         if (isForeground && dismissForegroundNotification) {
-            Logger.verbose("notification dismissed cause " + Constants.REMOTE_DISMISS_FOREGROUND_NOTIFICATION + " is true.");
+            Logger.verbose("notification dismissed cause " + Constants.DISMISS_FOREGROUND_NOTIFICATION + " is true.");
             return;
         }
 

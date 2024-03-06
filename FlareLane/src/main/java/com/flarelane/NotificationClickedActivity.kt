@@ -30,9 +30,8 @@ internal class NotificationClickedActivity : Activity() {
             launchApp()
         } else {
             val isIgnoreLaunchUrl = AndroidUtils.getManifestMetaBoolean(
-                this, Constants.META_NAME_IGNORE_LAUNCH_URLS
-            ) || (notification.dataJsonObject?.has(Constants.REMOTE_IGNORE_LAUNCH_URL) == true &&
-                    notification.dataJsonObject?.getBoolean(Constants.REMOTE_IGNORE_LAUNCH_URL) == true)
+                this, Constants.DISMISS_LAUNCH_URL
+            ) || notification.dataJsonObject?.optString(Constants.DISMISS_LAUNCH_URL) == "true"
             if (isIgnoreLaunchUrl) {
                 Logger.verbose("Works natively without automatic URL processing")
                 launchApp()
