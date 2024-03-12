@@ -1,9 +1,12 @@
 package com.flarelane
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import com.flarelane.util.AndroidUtils
 import com.flarelane.util.IntentUtil
+import com.flarelane.util.PlayStoreInfo
 import com.flarelane.util.getParcelableDataClass
 import com.flarelane.webview.FlareLaneWebViewActivity
 
@@ -42,7 +45,6 @@ internal class NotificationClickedActivity : Activity() {
                 try {
                     startActivity(it)
                 } catch (_: Exception) {
-                    FlareLaneWebViewActivity.show(this, notification.url)
                 }
             } ?: FlareLaneWebViewActivity.show(this, notification.url)
         }
@@ -51,8 +53,12 @@ internal class NotificationClickedActivity : Activity() {
     private fun launchApp() {
         if (isTaskRoot) {
             Logger.verbose("This is last activity in the stack")
-            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-            startActivity(launchIntent)
+            packageManager.getLaunchIntentForPackage(packageName)?.let {
+                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+                startActivity(it)
+            }
         }
     }
 }

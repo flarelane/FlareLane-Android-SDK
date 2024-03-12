@@ -29,10 +29,11 @@ internal open class FlareLaneWebViewClient(private val context: Context) : WebVi
         } ?: false
     }
 
-    private fun startActivity(context: Context, intent: Intent) = try {
-        context.startActivity(intent)
-        true
-    } catch (_: Exception) {
-        false
+    private fun startActivity(context: Context, intent: Intent): Boolean {
+        try {
+            context.startActivity(intent)
+        } catch (_: Exception) {
+        }
+        return true
     }
 }

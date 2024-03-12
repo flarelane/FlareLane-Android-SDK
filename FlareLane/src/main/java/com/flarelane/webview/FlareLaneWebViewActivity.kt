@@ -1,6 +1,7 @@
 package com.flarelane.webview
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -80,7 +81,9 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
     override fun finish() {
         if (isTaskRoot) {
             packageManager.getLaunchIntentForPackage(packageName)?.let {
-                it.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(it)
             }
         }
@@ -115,6 +118,7 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         internal fun show(context: Context, url: String) {
             context.startActivity(
                 Intent(context, FlareLaneWebViewActivity::class.java).also {
+                    it.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                     it.putExtra(LOAD_URL, url)
                 }
             )
