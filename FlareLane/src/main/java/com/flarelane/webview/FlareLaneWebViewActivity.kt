@@ -78,6 +78,13 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         })
     }
 
+    override fun onStop() {
+        super.onStop()
+        if (webView.originalUrl.isNullOrEmpty()) {
+            super.finish()
+        }
+    }
+
     override fun finish() {
         if (isTaskRoot) {
             packageManager.getLaunchIntentForPackage(packageName)?.let {
@@ -118,7 +125,9 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         internal fun show(context: Context, url: String) {
             context.startActivity(
                 Intent(context, FlareLaneWebViewActivity::class.java).also {
-                    it.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
                     it.putExtra(LOAD_URL, url)
                 }
             )
