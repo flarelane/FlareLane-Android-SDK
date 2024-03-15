@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="day_night_background_color">#0f0f0f</color>
+    <color name="day_night_text_color">#F5F5F5</color>
     <color name="day_night_ic_color">#fff</color>
     <color name="day_night_divider_color">#393939</color>
 </resources>

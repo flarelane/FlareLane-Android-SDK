@@ -1,30 +1,43 @@
 package com.flarelane.webview
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.graphics.drawable.LayerDrawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.os.Message
 import android.view.View
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.widget.ImageView
+import android.widget.ImageButton
 import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import com.flarelane.Constants
 import com.flarelane.R
+import com.flarelane.util.AndroidUtils
+import com.flarelane.util.corner
 import com.flarelane.util.setAlgorithmicDarkeningAllow
+import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
+import com.google.android.material.appbar.AppBarLayout
 
 internal class FlareLaneWebViewActivity : AppCompatActivity() {
+    private lateinit var appBarLayout: AppBarLayout
+    private lateinit var ibBack: ImageButton
+    private lateinit var tvUrl: TextView
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
 
-    @SuppressLint("MissingInflatedId", "SetJavaScriptEnabled", "RequiresFeature")
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val loadUrl = if (intent.hasExtra(LOAD_URL)) {
@@ -40,19 +53,26 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_webview)
 
-        findViewById<Toolbar>(R.id.toolbar).let {
-            it.setNavigationOnClickListener {
-                finish()
-            }
-        }
-
+        appBarLayout = findViewById(R.id.app_bar_layout)
+        ibBack = findViewById(R.id.ib_back)
+        tvUrl = findViewById(R.id.tv_url)
         webView = findViewById(R.id.web_view)
         progressBar = findViewById(R.id.progress_bar)
+
+        ibBack.setOnClickListener {
+            finish()
+        }
+
+        setTextUrlHost(loadUrl)
 
         with(webView) {
             setAlgorithmicDarkeningAllow()
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
+            addJavascriptInterface(
+                FlareLaneJavascriptInterface(this@FlareLaneWebViewActivity),
+                FlareLaneJavascriptInterface.BRIDGE_NAME
+            )
         }
 
         with(webView.settings) {
@@ -76,6 +96,8 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
                 }
             }
         })
+
+        setUiStyle()
     }
 
     override fun onStop() {
@@ -110,6 +132,10 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
     private val flWebViewClient = object : FlareLaneWebViewClient(this) {
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
+            appBarLayout.setExpanded(true)
+            if (!url.isNullOrEmpty()) {
+                setTextUrlHost(url)
+            }
             progressBar.visibility = View.VISIBLE
         }
 
@@ -119,8 +145,41 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         }
     }
 
+    private fun setTextUrlHost(url: String) {
+        tvUrl.text = Uri.parse(url).host
+    }
+
+    private fun setUiStyle() {
+        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_APP_BAR_BACKGROUND)?.let {
+            appBarLayout.setBackgroundColor(it)
+        }
+        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_URL_TEXT_COLOR)?.let {
+            tvUrl.setTextColor(it)
+        }
+        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_CLOSE_ICON_COLOR)?.let {
+            ibBack.colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_IN)
+        }
+        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_DIVIDER_COLOR)?.let {
+            findViewById<View>(R.id.web_view_divider).setBackgroundColor(it)
+        }
+        val layerDrawable = progressBar.progressDrawable as LayerDrawable
+        layerDrawable.getDrawable(0).colorFilter = PorterDuffColorFilter(
+            Color.TRANSPARENT, PorterDuff.Mode.SRC_IN
+        )
+        layerDrawable.getDrawable(1).colorFilter = PorterDuffColorFilter(
+            Color.TRANSPARENT, PorterDuff.Mode.SRC_IN
+        )
+        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_PROGRESS_BAR_COLOR)?.let {
+            layerDrawable.getDrawable(2).colorFilter = PorterDuffColorFilter(
+                it, PorterDuff.Mode.SRC_IN
+            )
+        }
+        tvUrl.corner(STYLE_CORNER_URL)
+    }
+
     companion object {
         private const val LOAD_URL = "load_url"
+        private const val STYLE_CORNER_URL = 6f
 
         internal fun show(context: Context, url: String) {
             context.startActivity(
