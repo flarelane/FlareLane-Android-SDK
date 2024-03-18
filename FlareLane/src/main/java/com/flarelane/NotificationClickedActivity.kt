@@ -46,6 +46,8 @@ internal class NotificationClickedActivity : Activity() {
                     it.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(it)
                 } catch (_: Exception) {
+                    Logger.verbose("Url is not available. url=${notification.url}")
+                    launchApp()
                 }
             } ?: FlareLaneWebViewActivity.show(this, notification.url)
         }
