@@ -9,23 +9,19 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.drawable.LayerDrawable
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.flarelane.Constants
 import com.flarelane.R
 import com.flarelane.util.AndroidUtils
-import com.flarelane.util.corner
 import com.flarelane.util.setAlgorithmicDarkeningAllow
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 import com.google.android.material.appbar.AppBarLayout
@@ -174,12 +170,10 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
                 it, PorterDuff.Mode.SRC_IN
             )
         }
-        tvUrl.corner(STYLE_CORNER_URL)
     }
 
     companion object {
         private const val LOAD_URL = "load_url"
-        private const val STYLE_CORNER_URL = 6f
 
         internal fun show(context: Context, url: String) {
             context.startActivity(
