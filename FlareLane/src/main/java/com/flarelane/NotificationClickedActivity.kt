@@ -2,11 +2,10 @@ package com.flarelane
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import com.flarelane.notification.NotificationClickedButton
 import com.flarelane.util.AndroidUtils
 import com.flarelane.util.IntentUtil
-import com.flarelane.util.PlayStoreInfo
 import com.flarelane.util.getParcelableDataClass
 import com.flarelane.webview.FlareLaneWebViewActivity
 
@@ -16,9 +15,13 @@ internal class NotificationClickedActivity : Activity() {
             super.onCreate(savedInstanceState)
             Logger.verbose("NotificationClickedActivity onCreate")
             val notification = intent.getParcelableDataClass(Notification::class.java) ?: return
+            val notificationClickedButton = intent.getParcelableDataClass(
+                NotificationClickedButton::class.java
+            )
             val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)
             val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)
             Logger.verbose("NotificationClickedActivity notification=$notification")
+            // TODO button clicked event
             EventService.createClicked(projectId, deviceId, notification)
             handleNotificationClicked(notification)
         } catch (e: Exception) {
@@ -28,7 +31,10 @@ internal class NotificationClickedActivity : Activity() {
         }
     }
 
-    private fun handleNotificationClicked(notification: Notification) {
+    private fun handleNotificationClicked(
+        notification: Notification,
+        notificationClickedButton: NotificationClickedButton? = null
+    ) {
         if (notification.url.isNullOrEmpty()) {
             launchApp()
         } else {
@@ -41,15 +47,16 @@ internal class NotificationClickedActivity : Activity() {
                 return
             }
 
-            IntentUtil.createIntentIfResolveActivity(this, notification.url)?.let {
+            val url = notificationClickedButton?.link ?: notification.url
+            IntentUtil.createIntentIfResolveActivity(this, url)?.let {
                 try {
                     it.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                     startActivity(it)
                 } catch (_: Exception) {
-                    Logger.verbose("Url is not available. url=${notification.url}")
+                    Logger.verbose("Url is not available. url=$url")
                     launchApp()
                 }
-            } ?: FlareLaneWebViewActivity.show(this, notification.url)
+            } ?: FlareLaneWebViewActivity.show(this, url)
         }
     }
 

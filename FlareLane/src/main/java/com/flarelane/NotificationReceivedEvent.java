@@ -9,11 +9,14 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 
+import com.flarelane.notification.NotificationClickedButton;
 import com.flarelane.util.ExtensionsKt;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -78,6 +81,8 @@ public class NotificationReceivedEvent {
                                 .setPriority(NotificationCompat.PRIORITY_MAX)
                                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
+                        setAction(builder, notification);
+
                         try {
                             String accentColor = Helper.getResourceString(context.getApplicationContext(), Constants.ID_NOTIFICATION_ACCENT_COLOR);
                             if (accentColor != null) {
@@ -124,18 +129,14 @@ public class NotificationReceivedEvent {
     @SuppressLint("DiscouragedApi")
     private int getNotificationIcon(Context context) {
         try {
-            // TODO: Temporarily available only from Lollipop higher
-            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                // TODO: if notificationIcon was set (LEGACY)
-                if (FlareLane.notificationIcon != 0) {
-                    return FlareLane.notificationIcon;
-                }
+            if (FlareLane.notificationIcon != 0) {
+                return FlareLane.notificationIcon;
+            }
 
-                // if default notification icon is exists
-                int getDefaultIconId = context.getResources().getIdentifier(Constants.ID_IC_STAT_DEFAULT, "drawable", context.getPackageName());
-                if (getDefaultIconId != 0) {
-                    return getDefaultIconId;
-                }
+            // if default notification icon is exists
+            int getDefaultIconId = context.getResources().getIdentifier(Constants.ID_IC_STAT_DEFAULT, "drawable", context.getPackageName());
+            if (getDefaultIconId != 0) {
+                return getDefaultIconId;
             }
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
@@ -145,4 +146,38 @@ public class NotificationReceivedEvent {
         return android.R.drawable.ic_menu_info_details;
     }
 
+    private void setAction(NotificationCompat.Builder builder, Notification notification) {
+        try {
+            JSONArray buttonsJsonArray = notification.getButtonsJsonArray();
+            if (buttonsJsonArray != null && buttonsJsonArray.length() > 0) {
+                int length = buttonsJsonArray.length();
+
+                for (int i = 0; i < length; i++) {
+                    JSONObject jsonObject = buttonsJsonArray.getJSONObject(i);
+                    NotificationClickedButton clickedButton = new NotificationClickedButton(
+                            jsonObject.getString("actionId"),
+                            jsonObject.getString("label"),
+                            jsonObject.getString("link")
+                    );
+
+                    Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    ExtensionsKt.putParcelableDataClass(clickedIntent, clickedButton);
+
+                    PendingIntent clickPendingIntent = PendingIntent.getActivity(
+                            context,
+                            0,
+                            clickedIntent,
+                            PendingIntent.FLAG_IMMUTABLE
+                    );
+                    NotificationCompat.Action action = new NotificationCompat.Action(
+                            null, clickedButton.getLabel(), clickPendingIntent
+                    );
+                    builder.addAction(action);
+                }
+            }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
 }

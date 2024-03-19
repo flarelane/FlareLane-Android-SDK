@@ -4,7 +4,7 @@ import android.os.Bundle
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
-open class ReflectClass {
+interface ReflectClass {
     fun toMap(): Map<String, Any?> {
         return this@ReflectClass::class.primaryConstructor?.parameters?.associateWith { param ->
             val property = this@ReflectClass::class.memberProperties.firstOrNull {
