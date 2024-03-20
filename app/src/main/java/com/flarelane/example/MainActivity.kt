@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import com.flarelane.FlareLane
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -124,6 +125,30 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("url", testUrl)
             intent.putExtra("data", "{}")
             intent.putExtra("from", "0")
+
+            val buttonsJsonArray = JSONArray()
+            buttonsJsonArray.put(
+                JSONObject().also {
+                    it.put("buttonId", "a")
+                    it.put("label", "FlareLane")
+                    it.put("link", "https://www.flarelane.com/")
+                }
+            )
+            buttonsJsonArray.put(
+                JSONObject().also {
+                    it.put("buttonId", "b")
+                    it.put("label", "Apple")
+                    it.put("link", "https://www.apple.com")
+                }
+            )
+            buttonsJsonArray.put(
+                JSONObject().also {
+                    it.put("buttonId", "c")
+                    it.put("label", "Oracle")
+                    it.put("link", "https://www.oracle.com")
+                }
+            )
+            intent.putExtra("buttons", buttonsJsonArray.toString())
             sendBroadcast(intent)
         }
     }

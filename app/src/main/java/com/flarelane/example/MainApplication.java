@@ -8,6 +8,7 @@ import com.flarelane.Notification;
 import com.flarelane.NotificationClickedHandler;
 import com.flarelane.NotificationForegroundReceivedHandler;
 import com.flarelane.NotificationReceivedEvent;
+import com.flarelane.notification.NotificationClickEvent;
 
 import org.json.JSONObject;
 
@@ -22,8 +23,8 @@ public class MainApplication extends Application {
         FlareLane.initWithContext(this, FLARELANE_PROJECT_ID, false);
         FlareLane.setNotificationClickedHandler(new NotificationClickedHandler() {
             @Override
-            public void onClicked(Notification notification) {
-                Log.d("FlareLane", "NotificationClickedHandler.onClicked: " + notification.toString());
+            public void onClicked(NotificationClickEvent event) {
+                Log.d("FlareLane", "NotificationClickedHandler.onClicked: " + event);
             }
         });
 

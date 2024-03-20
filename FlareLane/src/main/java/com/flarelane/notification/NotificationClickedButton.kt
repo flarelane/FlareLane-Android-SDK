@@ -3,10 +3,17 @@ package com.flarelane.notification
 import android.os.Parcelable
 import com.flarelane.ReflectClass
 import kotlinx.parcelize.Parcelize
+import org.json.JSONObject
 
 @Parcelize
 data class NotificationClickedButton(
-    val id: String,
-    val label: String,
-    val link: String
-) : Parcelable, ReflectClass
+    @JvmField val id: String,
+    @JvmField val label: String,
+    @JvmField val link: String
+) : Parcelable, ReflectClass {
+    constructor(jsonObject: JSONObject) : this(
+        jsonObject.getString("buttonId"),
+        jsonObject.getString("label"),
+        jsonObject.getString("link")
+    )
+}

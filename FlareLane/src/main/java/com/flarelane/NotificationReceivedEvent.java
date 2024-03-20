@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat;
 import com.flarelane.notification.NotificationClickedButton;
 import com.flarelane.util.ExtensionsKt;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -45,8 +44,11 @@ public class NotificationReceivedEvent {
                 @Override
                 public void run() {
                     try {
+                        int notifyId = (int) new Date().getTime();
+
                         Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
                                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        clickedIntent.putExtra("notifyId", notifyId);
                         ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
 
                         PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
@@ -64,7 +66,7 @@ public class NotificationReceivedEvent {
                                 in = connection.getInputStream();
                                 image = BitmapFactory.decodeStream(in);
                             } catch (Exception e) {
-                                com.flarelane.BaseErrorHandler.handle(e);
+                                BaseErrorHandler.handle(e);
                             }
                         }
 
@@ -77,7 +79,7 @@ public class NotificationReceivedEvent {
                                 .setPriority(NotificationCompat.PRIORITY_MAX)
                                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
-                        setAction(builder, notification);
+                        setAction(notifyId, builder, notification);
 
                         try {
                             String accentColor = Helper.getResourceString(context.getApplicationContext(), Constants.ID_NOTIFICATION_ACCENT_COLOR);
@@ -85,7 +87,7 @@ public class NotificationReceivedEvent {
                                 builder = builder.setColor(Color.parseColor(accentColor));
                             }
                         } catch (Exception e) {
-                            com.flarelane.BaseErrorHandler.handle(e);
+                            BaseErrorHandler.handle(e);
                         }
 
                         if (image != null) {
@@ -103,8 +105,7 @@ public class NotificationReceivedEvent {
                         notification.defaults |= android.app.Notification.DEFAULT_VIBRATE;
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                        notificationManager.notify((int) new Date().getTime(), notification);
-
+                        notificationManager.notify(notifyId, notification);
 
                         if (isForeground) {
                             EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
@@ -112,7 +113,7 @@ public class NotificationReceivedEvent {
                             EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
                         }
                     } catch (Exception e) {
-                        com.flarelane.BaseErrorHandler.handle(e);
+                        BaseErrorHandler.handle(e);
                     }
                 }
             }).start();
@@ -141,32 +142,35 @@ public class NotificationReceivedEvent {
         return android.R.drawable.ic_menu_info_details;
     }
 
-    private void setAction(NotificationCompat.Builder builder, Notification notification) {
+    private void setAction(
+            int notifyId,
+            NotificationCompat.Builder builder,
+            Notification notification
+    ) {
         try {
             JSONArray buttonsJsonArray = notification.getButtonsJsonArray();
             if (buttonsJsonArray != null && buttonsJsonArray.length() > 0) {
                 int length = buttonsJsonArray.length();
 
                 for (int i = 0; i < length; i++) {
-                    JSONObject jsonObject = buttonsJsonArray.getJSONObject(i);
-                    NotificationClickedButton clickedButton = new NotificationClickedButton(
-                            jsonObject.getString("actionId"),
-                            jsonObject.getString("label"),
-                            jsonObject.getString("link")
-                    );
-
                     Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
                             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    clickedIntent.putExtra("notifyId", notifyId);
+                    ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
+
+                    NotificationClickedButton clickedButton = new NotificationClickedButton(
+                            buttonsJsonArray.getJSONObject(i)
+                    );
                     ExtensionsKt.putParcelableDataClass(clickedIntent, clickedButton);
 
                     PendingIntent clickPendingIntent = PendingIntent.getActivity(
                             context,
-                            0,
+                            notifyId + i,
                             clickedIntent,
-                            PendingIntent.FLAG_IMMUTABLE
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
                     );
                     NotificationCompat.Action action = new NotificationCompat.Action(
-                            null, clickedButton.getLabel(), clickPendingIntent
+                            null, clickedButton.label, clickPendingIntent
                     );
                     builder.addAction(action);
                 }

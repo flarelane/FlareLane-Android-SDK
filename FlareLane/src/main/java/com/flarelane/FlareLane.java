@@ -9,18 +9,12 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONObject;
 
@@ -82,9 +76,9 @@ public class FlareLane {
         try {
             FlareLane.notificationClickedHandler = handler;
 
-            if (EventService.unhandledClickedNotification != null) {
-                handler.onClicked(EventService.unhandledClickedNotification);
-                EventService.unhandledClickedNotification = null;
+            if (EventService.unhandledNotificationClickEvent != null) {
+                handler.onClicked(EventService.unhandledNotificationClickEvent);
+                EventService.unhandledNotificationClickEvent = null;
             }
 
             Logger.verbose("NotificationClickedHandler has been registered.");
