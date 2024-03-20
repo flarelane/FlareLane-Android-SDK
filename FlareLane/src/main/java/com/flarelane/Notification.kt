@@ -38,7 +38,6 @@ data class Notification(
             null
         }
     }
-
     @IgnoredOnParcel
     val buttonsJsonArray by lazy {
         try {

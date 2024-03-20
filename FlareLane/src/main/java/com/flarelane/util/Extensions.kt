@@ -1,14 +1,8 @@
 package com.flarelane.util
 
-import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Build
 import android.os.Parcelable
-import android.webkit.WebView
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.webkit.WebSettingsCompat
-import androidx.webkit.WebViewFeature
 import com.flarelane.Logger
 import org.json.JSONException
 import org.json.JSONObject
@@ -34,37 +28,6 @@ internal fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
         return
     }
     run.invoke(jsonObject)
-}
-
-@SuppressLint("RequiresFeature")
-internal fun WebView.setAlgorithmicDarkeningAllow() {
-    if (AppCompatDelegate.getDefaultNightMode() == AppCompatDelegate.MODE_NIGHT_NO) {
-        return
-    }
-    try {
-        WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, true)
-    } catch (_: Exception) {
-        try {
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                when (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-                    Configuration.UI_MODE_NIGHT_YES -> {
-                        WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_ON)
-                    }
-
-                    Configuration.UI_MODE_NIGHT_NO, Configuration.UI_MODE_NIGHT_UNDEFINED -> {
-                        WebSettingsCompat.setForceDark(settings, WebSettingsCompat.FORCE_DARK_OFF)
-                    }
-                }
-            }
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
-                WebSettingsCompat.setForceDarkStrategy(
-                    settings,
-                    WebSettingsCompat.DARK_STRATEGY_WEB_THEME_DARKENING_ONLY
-                )
-            }
-        } catch (_: Exception) {
-        }
-    }
 }
 
 internal fun Intent.putParcelableDataClass(clazz: Parcelable) {

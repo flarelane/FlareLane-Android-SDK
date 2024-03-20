@@ -9,15 +9,11 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-
 import androidx.core.app.NotificationCompat;
-
 import com.flarelane.notification.NotificationClickedButton;
 import com.flarelane.util.ExtensionsKt;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -132,7 +128,6 @@ public class NotificationReceivedEvent {
             if (FlareLane.notificationIcon != 0) {
                 return FlareLane.notificationIcon;
             }
-
             // if default notification icon is exists
             int getDefaultIconId = context.getResources().getIdentifier(Constants.ID_IC_STAT_DEFAULT, "drawable", context.getPackageName());
             if (getDefaultIconId != 0) {

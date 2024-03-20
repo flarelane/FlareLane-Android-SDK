@@ -4,10 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
-import android.graphics.drawable.LayerDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -19,10 +15,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import com.flarelane.Constants
 import com.flarelane.R
-import com.flarelane.util.AndroidUtils
-import com.flarelane.util.setAlgorithmicDarkeningAllow
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 import com.google.android.material.appbar.AppBarLayout
 
@@ -62,7 +55,6 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         setTextUrlHost(loadUrl)
 
         with(webView) {
-            setAlgorithmicDarkeningAllow()
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
             addJavascriptInterface(
@@ -92,8 +84,6 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
                 }
             }
         })
-
-        setUiStyle()
     }
 
     override fun onStop() {
@@ -143,33 +133,6 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
 
     private fun setTextUrlHost(url: String) {
         tvUrl.text = Uri.parse(url).host
-    }
-
-    private fun setUiStyle() {
-        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_APP_BAR_BACKGROUND)?.let {
-            appBarLayout.setBackgroundColor(it)
-        }
-        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_URL_TEXT_COLOR)?.let {
-            tvUrl.setTextColor(it)
-        }
-        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_CLOSE_ICON_COLOR)?.let {
-            ibBack.colorFilter = PorterDuffColorFilter(it, PorterDuff.Mode.SRC_IN)
-        }
-        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_DIVIDER_COLOR)?.let {
-            findViewById<View>(R.id.web_view_divider).setBackgroundColor(it)
-        }
-        val layerDrawable = progressBar.progressDrawable as LayerDrawable
-        layerDrawable.getDrawable(0).colorFilter = PorterDuffColorFilter(
-            Color.TRANSPARENT, PorterDuff.Mode.SRC_IN
-        )
-        layerDrawable.getDrawable(1).colorFilter = PorterDuffColorFilter(
-            Color.TRANSPARENT, PorterDuff.Mode.SRC_IN
-        )
-        AndroidUtils.getResourceColor(this, Constants.COLOR_WEB_VIEW_PROGRESS_BAR_COLOR)?.let {
-            layerDrawable.getDrawable(2).colorFilter = PorterDuffColorFilter(
-                it, PorterDuff.Mode.SRC_IN
-            )
-        }
     }
 
     companion object {
