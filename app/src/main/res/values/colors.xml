@@ -7,15 +7,4 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-
-    <!-- WebView background color -->
-    <color name="flarelane_web_view_app_bar_background_color">#D9E5FF</color>
-    <!-- WebView url text color -->
-    <color name="flarelane_web_view_url_text_color">#242424</color>
-    <!-- WebView close button color -->
-    <color name="flarelane_web_view_close_icon_color">#242424</color>
-    <!-- WebView AppBar divider color -->
-    <color name="flarelane_web_view_divider_color">#C7D3ED</color>
-    <!-- WebView progress bar color -->
-    <color name="flarelane_web_view_progress_bar_color">#5AAEFF</color>
 </resources>
