@@ -15,7 +15,7 @@
         app:titleTextColor="@color/white" />
 
     <WebView
-        android:id="@+id/webView"
+        android:id="@+id/web_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.flarelane">
 
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <application>
+    <application
+        android:usesCleartextTraffic="true"
+        tools:targetApi="m">
         <meta-data
             android:name="com.flarelane.default_firebase_app_id"
             android:value="1:415602473946:android:98a2ad40916ab031e59ee3" />
@@ -17,22 +21,41 @@
 
         <receiver
             android:name=".FCMBroadcastReceiver"
-            android:permission="com.google.android.c2dm.permission.SEND"
-            android:exported="true">
-            <intent-filter android:priority="999" >
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter android:priority="999">
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
                 <category android:name="${applicationId}" />
             </intent-filter>
         </receiver>
 
-        <activity android:name=".NotificationClickedActivity"
+        <activity
+            android:name=".NotificationClickedActivity"
+            android:excludeFromRecents="true"
             android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
-        </activity>
-        <activity android:name=".PermissionActivity"
+            android:taskAffinity="flarelane.taskAffinity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".PermissionActivity"
+            android:excludeFromRecents="true"
             android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
-        </activity>
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".webview.FlareLaneWebViewActivity"
+            android:exported="false"
+            android:hardwareAccelerated="true" />
     </application>
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
 </manifest>

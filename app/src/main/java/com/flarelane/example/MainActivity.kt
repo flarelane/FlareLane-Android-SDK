@@ -113,6 +113,19 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }
+
+        findViewById<Button>(R.id.btn_url_notification).setOnClickListener {
+            val testUrl = "https://www.google.com"
+            val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
+            intent.putExtra("notificationId", "0")
+            intent.putExtra("isFlareLane", true)
+            intent.putExtra("title", "Click to open WebView")
+            intent.putExtra("body", "url=${testUrl}")
+            intent.putExtra("url", testUrl)
+            intent.putExtra("data", "{}")
+            intent.putExtra("from", "0")
+            sendBroadcast(intent)
+        }
     }
 
     // FOR FIREBASE: https://firebase.google.com/docs/cloud-messaging/android/client

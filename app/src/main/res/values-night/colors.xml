@@ -9,13 +9,13 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- WebView background color -->
-    <color name="flarelane_web_view_app_bar_background_color">#D9E5FF</color>
+    <color name="flarelane_web_view_app_bar_background_color">#4374D9</color>
     <!-- WebView url text color -->
-    <color name="flarelane_web_view_url_text_color">#242424</color>
+    <color name="flarelane_web_view_url_text_color">#F5F5F5</color>
     <!-- WebView close button color -->
-    <color name="flarelane_web_view_close_icon_color">#242424</color>
+    <color name="flarelane_web_view_close_icon_color">#fff</color>
     <!-- WebView AppBar divider color -->
-    <color name="flarelane_web_view_divider_color">#C7D3ED</color>
+    <color name="flarelane_web_view_divider_color">#00086D</color>
     <!-- WebView progress bar color -->
-    <color name="flarelane_web_view_progress_bar_color">#5AAEFF</color>
+    <color name="flarelane_web_view_progress_bar_color">#79AAFF</color>
 </resources>

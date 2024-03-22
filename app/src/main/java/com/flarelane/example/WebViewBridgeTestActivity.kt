@@ -24,7 +24,7 @@ class WebViewBridgeTestActivity : AppCompatActivity() {
             }
         }
 
-        val webView: WebView = findViewById(R.id.webView)
+        val webView: WebView = findViewById(R.id.web_view)
         with(webView) {
             settings.javaScriptEnabled = true
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
