@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="white">#FFF</color>
+    <color name="basic_text">#242424</color>
+    <color name="basic_ic_tint">#121212</color>
+    <color name="basic_app_bar_divider">#EAEAEA</color>
+    <color name="basic_progress">#143CA0</color>
+</resources>

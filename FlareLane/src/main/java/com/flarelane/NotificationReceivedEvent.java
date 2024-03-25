@@ -1,5 +1,6 @@
 package com.flarelane;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -11,6 +12,8 @@ import android.graphics.Color;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
+
+import com.flarelane.util.ExtensionsKt;
 
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -44,13 +47,9 @@ public class NotificationReceivedEvent {
                 public void run() {
                     try {
                         Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                                .putExtra("title", flarelaneNotification.title)
-                                .putExtra("body", flarelaneNotification.body)
-                                .putExtra("url", flarelaneNotification.url)
-                                .putExtra("imageUrl", flarelaneNotification.imageUrl)
-                                .putExtra("data", flarelaneNotification.data)
-                                .putExtra("notificationId", flarelaneNotification.id);
+                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
+
                         PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
 
                         int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
@@ -80,7 +79,7 @@ public class NotificationReceivedEvent {
                                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
                         try {
-                            String accentColor = Helper.getResourceString(context.getApplicationContext(), "flarelane_notification_accent_color");
+                            String accentColor = Helper.getResourceString(context.getApplicationContext(), Constants.ID_NOTIFICATION_ACCENT_COLOR);
                             if (accentColor != null) {
                                 builder = builder.setColor(Color.parseColor(accentColor));
                             }
@@ -98,9 +97,9 @@ public class NotificationReceivedEvent {
 
                         android.app.Notification notification = builder.build();
 
-                        notification.defaults|= android.app.Notification.DEFAULT_SOUND;
-                        notification.defaults|= android.app.Notification.DEFAULT_LIGHTS;
-                        notification.defaults|= android.app.Notification.DEFAULT_VIBRATE;
+                        notification.defaults |= android.app.Notification.DEFAULT_SOUND;
+                        notification.defaults |= android.app.Notification.DEFAULT_LIGHTS;
+                        notification.defaults |= android.app.Notification.DEFAULT_VIBRATE;
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify((int) new Date().getTime(), notification);
@@ -122,6 +121,7 @@ public class NotificationReceivedEvent {
 
     }
 
+    @SuppressLint("DiscouragedApi")
     private int getNotificationIcon(Context context) {
         try {
             // TODO: Temporarily available only from Lollipop higher
@@ -132,8 +132,7 @@ public class NotificationReceivedEvent {
                 }
 
                 // if default notification icon is exists
-                String defaultIconIdentifierName = "ic_stat_flarelane_default";
-                int getDefaultIconId = context.getResources().getIdentifier(defaultIconIdentifierName, "drawable", context.getPackageName());
+                int getDefaultIconId = context.getResources().getIdentifier(Constants.ID_IC_STAT_DEFAULT, "drawable", context.getPackageName());
                 if (getDefaultIconId != 0) {
                     return getDefaultIconId;
                 }
