@@ -177,7 +177,7 @@ public class FlareLane {
     public static boolean isSubscribed(Context context) {
         try {
             // As cannot controlled, not check targetSdkVersion.
-            boolean hasPermission = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ? ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED : true;
+            boolean hasPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
             String savedIsSubscribed = com.flarelane.BaseSharedPreferences.getIsSubscribed(context, true);
 
             return hasPermission && savedIsSubscribed != null && savedIsSubscribed.contentEquals("true");
