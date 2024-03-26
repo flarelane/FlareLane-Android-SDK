@@ -27,15 +27,15 @@ class ActivityLifecycleManager {
     protected Application.ActivityLifecycleCallbacks mActivityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
         @Override
         public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
+        }
+
+        @Override
+        public void onActivityStarted(@NonNull Activity activity) {
             if (isSkipActivity(activity)) {
                 return;
             }
             activitySet.add(activity);
             FlareLane.deviceRegisterOrActivate(activity.getApplicationContext());
-        }
-
-        @Override
-        public void onActivityStarted(@NonNull Activity activity) {
         }
 
         @Override
@@ -48,14 +48,6 @@ class ActivityLifecycleManager {
 
         @Override
         public void onActivityStopped(@NonNull Activity activity) {
-        }
-
-        @Override
-        public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
-        }
-
-        @Override
-        public void onActivityDestroyed(@NonNull Activity activity) {
             if (isSkipActivity(activity)) {
                 return;
             }
@@ -63,6 +55,14 @@ class ActivityLifecycleManager {
             if (activitySet.isEmpty()) {
                 FlareLane.isActivated = false;
             }
+        }
+
+        @Override
+        public void onActivityDestroyed(@NonNull Activity activity) {
+        }
+
+        @Override
+        public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
         }
     };
 }
