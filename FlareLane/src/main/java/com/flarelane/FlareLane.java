@@ -9,18 +9,12 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
-import com.google.firebase.messaging.FirebaseMessaging;
 
 import org.json.JSONObject;
 
@@ -38,7 +32,8 @@ public class FlareLane {
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
     private static Handler mainHandler = new Handler(Looper.getMainLooper());
-    private static boolean isActivated = false;
+    protected static boolean isActivated = false;
+
     private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
 
 
@@ -182,7 +177,7 @@ public class FlareLane {
     public static boolean isSubscribed(Context context) {
         try {
             // As cannot controlled, not check targetSdkVersion.
-            boolean hasPermission = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) ? ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED : true;
+            boolean hasPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
             String savedIsSubscribed = com.flarelane.BaseSharedPreferences.getIsSubscribed(context, true);
 
             return hasPermission && savedIsSubscribed != null && savedIsSubscribed.contentEquals("true");
@@ -255,7 +250,7 @@ public class FlareLane {
             String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
 
             String subjectType = userId != null ? "user" : "device";
-            String subjectId =  userId != null ? userId : deviceId;
+            String subjectId = userId != null ? userId : deviceId;
 
             com.flarelane.EventService.trackEvent(projectId, subjectType, subjectId, type, data);
         } catch (Exception e) {
@@ -294,7 +289,7 @@ public class FlareLane {
                 com.flarelane.DeviceService.register(context, projectId, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
-                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch && Helper.appInForeground(context)) {
                             com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
                         }
                     }
@@ -304,7 +299,7 @@ public class FlareLane {
                 com.flarelane.DeviceService.activate(context, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
-                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch) {
+                        if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch && Helper.appInForeground(context)) {
                             com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
                         }
                     }
