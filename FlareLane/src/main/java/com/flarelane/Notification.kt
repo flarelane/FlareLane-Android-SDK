@@ -1,5 +1,6 @@
 package com.flarelane
 
+import android.os.Bundle
 import android.os.Parcelable
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
@@ -13,7 +14,7 @@ data class Notification(
     @JvmField val title: String?,
     @JvmField val url: String?,
     @JvmField val imageUrl: String?
-) : Parcelable, ReflectClass() {
+) : Parcelable, InteractionClass {
     constructor(jsonObject: JSONObject) : this(
         jsonObject.getString("notificationId"),
         jsonObject.getString("body"),
@@ -33,6 +34,28 @@ data class Notification(
             }
         } catch (_: Exception) {
             null
+        }
+    }
+
+    override fun toHashMap(): HashMap<String, Any?> {
+        return hashMapOf<String, Any?>().also {
+            it["id"] = id
+            it["title"] = title
+            it["body"] = body
+            it["url"] = url
+            it["imageUrl"] = imageUrl
+            it["data"] = data
+        }
+    }
+
+    override fun toBundle(): Bundle {
+        return Bundle().also {
+            it.putString("id", id)
+            it.putString("title", title)
+            it.putString("body", body)
+            it.putString("url", url)
+            it.putString("imageUrl", imageUrl)
+            it.putString("data", data)
         }
     }
 }
