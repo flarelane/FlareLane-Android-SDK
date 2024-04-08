@@ -41,3 +41,11 @@ internal fun <T: Parcelable> Intent.getParcelableDataClass(clazz: Class<T>): T? 
         getParcelableExtra(clazz.simpleName)
     }
 }
+
+internal fun JSONObject?.getStringOrNull(key: String?): String? {
+    val result = this?.optString(key)
+    return when {
+        result.isNullOrEmpty() -> null
+        else -> result
+    }
+}

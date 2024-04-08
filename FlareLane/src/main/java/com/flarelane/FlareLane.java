@@ -29,7 +29,6 @@ public class FlareLane {
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
     protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;
-    protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
     private static Handler mainHandler = new Handler(Looper.getMainLooper());
     protected static boolean isActivated = false;
@@ -58,11 +57,6 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
-    }
-
-    // TODO: (Deprecated) FlareLane 클래스 내 코드로 아이콘 변경할 수 없도록 할 예정 (기본 리소스 이름을 인식하게 하거나, Notification 의 변수 값으로 동적 할당 예정)
-    public static void setNotificationIcon(int notificationIcon) {
-        FlareLane.notificationIcon = notificationIcon;
     }
 
     public static void setLogLevel(int logLevel) {
