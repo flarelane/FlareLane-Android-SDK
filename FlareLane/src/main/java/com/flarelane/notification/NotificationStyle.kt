@@ -4,40 +4,42 @@ import com.flarelane.Notification
 import com.flarelane.util.getStringOrNull
 
 internal sealed interface NotificationStyle {
-    val notification: Notification
     val type: NotificationStyleType
 
-    data class NSBasic(
-        override val notification: Notification,
-        override val type: NotificationStyleType,
-        val id: String?,
-        val iconUrl: String
-    ): NotificationStyle
+    data class Basic(
+        override val type: NotificationStyleType
+    ) : NotificationStyle
 
-    data class NSMessaging(
-        override val notification: Notification,
+    data class Messaging(
         override val type: NotificationStyleType,
-        val id: String?,
-        val iconUrl: String
-    ): NotificationStyle
+        val tag: String,
+        val iconUrl: String,
+        val sender: String,
+        val message: String
+    ) : NotificationStyle
 
     companion object {
         internal fun of(notification: Notification): NotificationStyle? {
-            val dataJsonObject = notification.dataJsonObject ?: return null
-            val typeString = dataJsonObject.getStringOrNull("type") ?: return null
-            val type = NotificationStyleType.of(typeString) ?: return null
+            val type = NotificationStyleType.of(
+                notification.dataJsonObject.getStringOrNull("type")
+            )
 
             return when (type) {
                 NotificationStyleType.BASIC -> {
-                    TODO()
+                    Basic(type = type)
                 }
+
                 NotificationStyleType.MESSAGING -> {
-                    val iconUrl = dataJsonObject.getStringOrNull("iconUrl") ?: return null
-                    NSMessaging(
-                        notification = notification,
+                    val sender =
+                        notification.dataJsonObject.getStringOrNull("sender") ?: return null
+                    Messaging(
                         type = type,
-                        id = dataJsonObject.getStringOrNull("id"),
-                        iconUrl = iconUrl
+                        tag = notification.dataJsonObject.getStringOrNull("tag") ?: sender,
+                        iconUrl = notification.dataJsonObject.getStringOrNull("iconUrl")
+                            ?: return null,
+                        sender = sender,
+                        message = notification.dataJsonObject.getStringOrNull("message")
+                            ?: return null
                     )
                 }
             }
@@ -46,9 +48,8 @@ internal sealed interface NotificationStyle {
 }
 
 internal enum class NotificationStyleType(val type: String) {
-    // TODO name wording
     BASIC("basic"),
-    MESSAGING("data_ms");
+    MESSAGING("messaging");
 
     companion object {
         fun of(type: String?) = entries.find { it.type == type } ?: BASIC

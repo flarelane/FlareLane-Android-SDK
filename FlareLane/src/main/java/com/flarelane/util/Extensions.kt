@@ -34,7 +34,7 @@ internal fun Intent.putParcelableDataClass(clazz: Parcelable) {
     putExtra(clazz::class.java.simpleName, clazz)
 }
 
-internal fun <T: Parcelable> Intent.getParcelableDataClass(clazz: Class<T>): T? {
+internal fun <T : Parcelable> Intent.getParcelableDataClass(clazz: Class<T>): T? {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         getParcelableExtra(clazz.simpleName, clazz)
     } else {

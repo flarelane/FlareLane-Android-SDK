@@ -19,8 +19,8 @@ internal class NotificationClickedActivity : Activity() {
             }
             Logger.verbose("NotificationClickedActivity notification=$notification")
 
-            val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)
-            val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)
+            val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)!!
+            val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)!!
             EventService.createClicked(projectId, deviceId, notification)
             handleNotificationClicked(notification)
         } catch (e: Exception) {

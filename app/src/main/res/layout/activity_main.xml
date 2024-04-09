@@ -84,6 +84,12 @@
             android:layout_height="wrap_content"
             android:text="Show notification with url" />
 
+        <Button
+            android:id="@+id/btn_messaging_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show notification messaging style" />
+
     </LinearLayout>
 
 </ScrollView>

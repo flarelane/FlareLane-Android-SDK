@@ -157,17 +157,6 @@ public class FlareLane {
         }
     }
 
-    public static String getDeviceId(Context context) {
-        try {
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
-            return deviceId;
-        } catch (Exception e) {
-            com.flarelane.BaseErrorHandler.handle(e);
-        }
-
-        return null;
-    }
-
     public static boolean isSubscribed(Context context) {
         try {
             // As cannot controlled, not check targetSdkVersion.
