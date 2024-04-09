@@ -127,17 +127,17 @@ class MainActivity : AppCompatActivity() {
             sendBroadcast(intent)
         }
 
-        var messageCount = 0
         findViewById<Button>(R.id.btn_messaging_notification).setOnClickListener {
             val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
             intent.putExtra("notificationId", "0")
             intent.putExtra("isFlareLane", true)
             intent.putExtra("body", "")
             intent.putExtra("data", JSONObject().also {
+                val person = TestMessagingPerson.PERSON_LIST.random()
                 it.put("type", "messaging")
-                it.put("sender", "민호")
-                it.put("iconUrl", "https://cdn-icons-png.flaticon.com/512/4042/4042356.png")
-                it.put("message", "안녕? 메세지 [${++messageCount}]")
+                it.put("sender", person.name)
+                it.put("iconUrl", person.iconUrl)
+                it.put("message", "안녕? 메세지 [${++person.messageCount}]")
             }.toString())
             intent.putExtra("from", "0")
             sendBroadcast(intent)
