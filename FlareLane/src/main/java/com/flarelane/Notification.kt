@@ -13,7 +13,8 @@ data class Notification(
     @JvmField val data: String?,
     @JvmField val title: String?,
     @JvmField val url: String?,
-    @JvmField val imageUrl: String?
+    @JvmField val imageUrl: String?,
+    @JvmField val largeIconUrl: String?,
 ) : Parcelable, InteractionClass {
     constructor(jsonObject: JSONObject) : this(
         jsonObject.getString("notificationId"),
@@ -21,7 +22,8 @@ data class Notification(
         jsonObject.getString("data"),
         if (jsonObject.has("title")) jsonObject.getString("title") else null,
         if (jsonObject.has("url")) jsonObject.getString("url") else null,
-        if (jsonObject.has("imageUrl")) jsonObject.getString("imageUrl") else null
+        if (jsonObject.has("imageUrl")) jsonObject.getString("imageUrl") else null,
+        if (jsonObject.has("largeIconUrl")) jsonObject.getString("largeIconUrl") else null
     )
 
     @IgnoredOnParcel
@@ -44,6 +46,7 @@ data class Notification(
             it["body"] = body
             it["url"] = url
             it["imageUrl"] = imageUrl
+            it["largeIconUrl"] = largeIconUrl
             it["data"] = data
         }
     }
@@ -55,6 +58,7 @@ data class Notification(
             it.putString("body", body)
             it.putString("url", url)
             it.putString("imageUrl", imageUrl)
+            it.putString("largeIconUrl", largeIconUrl)
             it.putString("data", data)
         }
     }

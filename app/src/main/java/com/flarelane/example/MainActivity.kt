@@ -123,6 +123,8 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("body", "url=${testUrl}")
             intent.putExtra("data", "{}")
             intent.putExtra("url", testUrl)
+            intent.putExtra("imageUrl", "https://t3.ftcdn.net/jpg/03/17/76/14/360_F_317761488_lUO7Enkcskj6wppf9Ycf5zck5Jm2Y2b9.jpg")
+            intent.putExtra("largeIconUrl", "https://cdn-icons-png.flaticon.com/512/1090/1090663.png")
             intent.putExtra("from", "0")
             sendBroadcast(intent)
         }
@@ -135,6 +137,7 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("data", JSONObject().also {
                 val person = TestMessagingPerson.PERSON_LIST.random()
                 it.put("type", "messaging")
+                it.put("tag", person.tag)
                 it.put("sender", person.name)
                 it.put("iconUrl", person.iconUrl)
                 it.put("message", "안녕? 메세지 [${++person.messageCount}]")

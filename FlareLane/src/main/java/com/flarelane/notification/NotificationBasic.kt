@@ -13,19 +13,42 @@ internal class NotificationBasic(
     override val requestContentId = 0
 
     override fun notify() {
-        FileUtil.downloadImageToBitmap(notification.imageUrl)
-            ?.let { image ->
-                builder.setLargeIcon(image)
+        val largeIcon = FileUtil.downloadImageToBitmap(notification.largeIconUrl)
+        val image = FileUtil.downloadImageToBitmap(notification.imageUrl)
+
+        when {
+            largeIcon != null && image != null -> {
+                builder.setLargeIcon(largeIcon)
                     .setStyle(
-                        NotificationCompat.BigPictureStyle().bigPicture(image)
+                        NotificationCompat.BigPictureStyle()
+                            .bigPicture(image)
                             .bigLargeIcon(null)
                             .setSummaryText(notification.body)
                     )
-            } ?: run {
-            builder.setStyle(
-                NotificationCompat.BigTextStyle().bigText(notification.body)
-            )
+            }
+
+            largeIcon != null -> {
+                builder.setLargeIcon(largeIcon)
+                    .setStyle(NotificationCompat.BigTextStyle().bigText(notification.body))
+            }
+
+            image != null -> {
+                builder.setLargeIcon(image)
+                    .setStyle(
+                        NotificationCompat.BigPictureStyle()
+                            .bigPicture(image)
+                            .bigLargeIcon(null)
+                            .setSummaryText(notification.body)
+                    )
+            }
+
+            else -> {
+                builder.setStyle(
+                    NotificationCompat.BigTextStyle().bigText(notification.body)
+                )
+            }
         }
+
         super.notify()
     }
 }

@@ -19,14 +19,16 @@ internal class NotificationMessaging(
     override val notifyTag = notificationStyle.tag
 
     override fun notify() {
-        val icon =
-            IconCompat.createWithBitmap(FileUtil.downloadImageToBitmap(notificationStyle.iconUrl)!!)
-
+        val icon = FileUtil.downloadImageToBitmap(notificationStyle.iconUrl)!!
         val user = Person.Builder().setName("-").build()
-        val person = Person.Builder().setName(notificationStyle.sender).setIcon(icon).build()
+        val person = Person.Builder()
+            .setName(notificationStyle.sender)
+            .setIcon(IconCompat.createWithBitmap(icon))
+            .build()
 
         createShortcut(person)
-        builder.setShortcutId(notificationStyle.sender)
+        builder.setLargeIcon(icon)
+            .setShortcutId(notificationStyle.sender)
             .setStyle(
                 MessagingStyle(user).also {
                     it.addMessage(
