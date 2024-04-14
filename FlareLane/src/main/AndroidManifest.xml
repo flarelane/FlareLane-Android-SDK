@@ -43,7 +43,7 @@
             android:name=".webview.FlareLaneWebViewActivity"
             android:exported="false"
             android:hardwareAccelerated="true"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
+            android:theme="@android:style/Theme.NoTitleBar" />
     </application>
 
     <queries>
