@@ -1,5 +1,7 @@
 package com.flarelane;
 
+import com.flarelane.notification.NotificationClickEvent;
+
 public interface NotificationClickedHandler {
-    void onClicked(com.flarelane.Notification notification);
+    void onClicked(NotificationClickEvent event);
 }

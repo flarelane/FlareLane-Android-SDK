@@ -77,9 +77,9 @@ public class FlareLane {
         try {
             FlareLane.notificationClickedHandler = handler;
 
-            if (EventService.unhandledClickedNotification != null) {
-                handler.onClicked(EventService.unhandledClickedNotification);
-                EventService.unhandledClickedNotification = null;
+            if (EventService.unhandledNotificationClickEvent != null) {
+                handler.onClicked(EventService.unhandledNotificationClickEvent);
+                EventService.unhandledNotificationClickEvent = null;
             }
 
             Logger.verbose("NotificationClickedHandler has been registered.");
