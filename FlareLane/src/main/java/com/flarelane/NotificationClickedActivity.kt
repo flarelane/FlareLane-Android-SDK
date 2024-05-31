@@ -43,15 +43,25 @@ internal class NotificationClickedActivity : Activity() {
                 return
             }
 
-            IntentUtil.createIntentIfResolveActivity(this, notification.url)?.let {
-                try {
-                    it.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                    startActivity(it)
-                } catch (_: Exception) {
-                    Logger.verbose("Url is not available. url=${notification.url}")
+            try {
+                val url = Uri.parse(notification.url)
+                if (url.scheme == null) {
+                    Logger.verbose("Url scheme is null. url=${notification.url}")
                     launchApp()
+                    return
                 }
-            } ?: FlareLaneWebViewActivity.show(this, notification.url)
+
+                IntentUtil.createIntentIfResolveActivity(this, url)?.let {
+                    try {
+                        it.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        startActivity(it)
+                    } catch (_: Exception) {
+                        Logger.verbose("Url is not available. url=${notification.url}")
+                        launchApp()
+                    }
+                } ?: FlareLaneWebViewActivity.show(this, notification.url)
+            } catch (_: Exception) {
+            }
         }
     }
 
@@ -59,9 +69,6 @@ internal class NotificationClickedActivity : Activity() {
         if (isTaskRoot) {
             Logger.verbose("This is last activity in the stack")
             packageManager.getLaunchIntentForPackage(packageName)?.let {
-                it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                        Intent.FLAG_ACTIVITY_SINGLE_TOP
                 startActivity(it)
             }
         }
