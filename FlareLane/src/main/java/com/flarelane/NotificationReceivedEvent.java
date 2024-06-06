@@ -15,6 +15,8 @@ import androidx.core.app.NotificationCompat;
 
 import com.flarelane.util.ExtensionsKt;
 
+import org.json.JSONObject;
+
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -65,11 +67,11 @@ public class NotificationReceivedEvent {
                                 in = connection.getInputStream();
                                 image = BitmapFactory.decodeStream(in);
                             } catch (Exception e) {
-                                com.flarelane.BaseErrorHandler.handle(e);
+                                BaseErrorHandler.handle(e);
                             }
                         }
 
-                        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ChannelManager.getDefaultChannelId())
+                        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, flarelaneNotification.currentChannelId(context))
                                 .setSmallIcon(getNotificationIcon(context))
                                 .setContentText(flarelaneNotification.body)
                                 .setContentTitle(flarelaneNotification.title == null ? context.getApplicationInfo().loadLabel(context.getPackageManager()).toString() : flarelaneNotification.title)
@@ -79,12 +81,12 @@ public class NotificationReceivedEvent {
                                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
 
                         try {
-                            String accentColor = Helper.getResourceString(context.getApplicationContext(), Constants.ID_NOTIFICATION_ACCENT_COLOR);
+                            String accentColor = Helper.getResourceString(context.getApplicationContext(), Constants.NOTIFICATION_ACCENT_COLOR);
                             if (accentColor != null) {
                                 builder = builder.setColor(Color.parseColor(accentColor));
                             }
                         } catch (Exception e) {
-                            com.flarelane.BaseErrorHandler.handle(e);
+                            BaseErrorHandler.handle(e);
                         }
 
                         if (image != null) {
@@ -102,8 +104,7 @@ public class NotificationReceivedEvent {
                         notification.defaults |= android.app.Notification.DEFAULT_VIBRATE;
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                        notificationManager.notify((int) new Date().getTime(), notification);
-
+                        notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
 
                         if (isForeground) {
                             EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
@@ -111,7 +112,7 @@ public class NotificationReceivedEvent {
                             EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
                         }
                     } catch (Exception e) {
-                        com.flarelane.BaseErrorHandler.handle(e);
+                        BaseErrorHandler.handle(e);
                     }
                 }
             }).start();

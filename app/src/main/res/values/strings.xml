@@ -2,7 +2,7 @@
     <string name="app_name">FlareLane-Android-SDK</string>
     <string name="notification_channel_id">default</string>
 
-<!--    Strings for FlareLane-->
+    <!-- Strings for FlareLane -->
     <string name="flarelane_notification_accent_color">#f242f5</string>
-    <string name="flarelane_default_channel_name">My Custom Channel</string>
+    <string name="flarelane_default_channel_name">My Channel Name</string>
 </resources>

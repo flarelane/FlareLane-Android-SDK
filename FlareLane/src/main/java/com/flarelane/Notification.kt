@@ -1,10 +1,13 @@
 package com.flarelane
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Parcelable
+import com.flarelane.util.AndroidUtils
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
+import java.util.Date
 
 @Parcelize
 data class Notification(
@@ -56,6 +59,26 @@ data class Notification(
             it.putString("url", url)
             it.putString("imageUrl", imageUrl)
             it.putString("data", data)
+        }
+    }
+
+    fun currentAndroidNotificationId(): Int {
+        val notificationId = dataJsonObject?.optString(Constants.NOTIFICATION_ID)
+
+        return if (notificationId != null && !notificationId.contentEquals("")) {
+            notificationId.toInt()
+        } else {
+            Date().time.toInt()
+        }
+    }
+
+    fun currentChannelId(context: Context): String {
+        val channelId = dataJsonObject?.optString(Constants.NOTIFICATION_CHANNEL_ID)
+
+        return if (channelId != null && !channelId.contentEquals("")) {
+            channelId
+        } else {
+            ChannelManager.getDefaultChannelId(context)
         }
     }
 }
