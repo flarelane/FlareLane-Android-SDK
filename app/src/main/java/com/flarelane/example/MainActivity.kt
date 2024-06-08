@@ -21,6 +21,7 @@ import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
+    private var isSetTags: Boolean = false
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,31 +48,24 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        findViewById<Button>(R.id.getTagsButton).setOnClickListener {
-            FlareLane.getTags(context) { tags ->
-                Log.d(
-                    "FlareLane",
-                    "Received Tags: $tags"
-                )
-            }
-        }
-
-        findViewById<Button>(R.id.setTagsButton).setOnClickListener {
+        findViewById<Button>(R.id.toggleTagsButton).setOnClickListener {
             try {
-                val data = JSONObject()
-                data.put("age", 27)
-                data.put("gender", "men")
-                FlareLane.setTags(context, data)
+                if (isSetTags) {
+                    val data = JSONObject()
+                    data.put("age", JSONObject.NULL)
+                    data.put("gender", JSONObject.NULL)
+                    FlareLane.setTags(context, data)
+                    isSetTags = false
+                } else {
+                    val data = JSONObject()
+                    data.put("age", 27)
+                    data.put("gender", "men")
+                    FlareLane.setTags(context, data)
+                    isSetTags = true
+                }
             } catch (e: JSONException) {
                 e.printStackTrace()
             }
-        }
-
-        findViewById<Button>(R.id.deleteTagsButton).setOnClickListener {
-            val keys = ArrayList<String>()
-            keys.add("age")
-            keys.add("gender")
-            FlareLane.deleteTags(context, keys)
         }
 
         findViewById<Button>(R.id.trackEventButton).setOnClickListener {

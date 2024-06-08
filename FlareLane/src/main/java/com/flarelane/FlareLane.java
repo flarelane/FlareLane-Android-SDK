@@ -24,7 +24,7 @@ import java.util.ArrayList;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.6.1";
+        public static String version = "1.6.2";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -113,29 +113,6 @@ public class FlareLane {
         }
     }
 
-    public static void getTags(Context context, @NonNull GetTagsHandler getTagsHandler) {
-        try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-
-            com.flarelane.DeviceService.getTags(projectId, deviceId, new com.flarelane.DeviceService.TagsResponseHandler() {
-                @Override
-                public void onSuccess(JSONObject tags) {
-                    if (getTagsHandler != null) {
-                        mainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                getTagsHandler.onReceiveTags(tags);
-                            }
-                        });
-                    }
-                }
-            });
-        } catch (Exception e) {
-            com.flarelane.BaseErrorHandler.handle(e);
-        }
-    }
-
     public static void setTags(Context context, JSONObject tags) {
         try {
             JSONObject data = new JSONObject();
@@ -147,17 +124,6 @@ public class FlareLane {
 
                 }
             });
-        } catch (Exception e) {
-            com.flarelane.BaseErrorHandler.handle(e);
-        }
-    }
-
-    public static void deleteTags(Context context, ArrayList<String> keys) {
-        try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-
-            com.flarelane.DeviceService.deleteTags(projectId, deviceId, keys);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -308,10 +274,6 @@ public class FlareLane {
         } catch (Exception e) {
             BaseErrorHandler.handle(e);
         }
-    }
-
-    public interface GetTagsHandler {
-        void onReceiveTags(JSONObject tags);
     }
 
     public interface IsSubscribedHandler {
