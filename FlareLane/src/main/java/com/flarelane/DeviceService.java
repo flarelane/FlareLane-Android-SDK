@@ -65,29 +65,6 @@ class DeviceService {
         }
     }
 
-    static void getTags(String projectId, String deviceId, TagsResponseHandler handler) {
-        HTTPClient.get("internal/v1/projects/" + projectId + "/devices/" + deviceId + "/tags", new HTTPClient.ResponseHandler() {
-            @Override
-            void onSuccess(int responseCode, JSONObject response) {
-                super.onSuccess(responseCode, response);
-
-                try {
-                    JSONObject data = response.getJSONObject("data");
-                    handler.onSuccess(data.getJSONObject("tags"));
-                } catch (Exception e) {
-                    BaseErrorHandler.handle(e);
-                }
-            }
-        });
-    }
-
-    static void deleteTags(String projectId, String deviceId, ArrayList<String> keys) throws JSONException {
-        JSONObject data = new JSONObject();
-        data.put("keys", new JSONArray(keys));
-
-        HTTPClient.delete("internal/v1/projects/" + projectId + "/devices/" + deviceId + "/tags", data, new HTTPClient.ResponseHandler());
-    }
-
     static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
         HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
             @Override
