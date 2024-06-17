@@ -1,36 +1,35 @@
 package com.flarelane.webview
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
-import com.flarelane.Logger
 import com.flarelane.R
 import com.flarelane.util.IntentUtil
 import com.flarelane.webview.jsinterface.FlareLaneInAppJavascriptInterface
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 
-internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
+internal class FlareLaneInAppWebViewActivity : Activity(),
     FlareLaneInAppJavascriptInterface.Listener {
     private lateinit var webView: WebView
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val loadUrl = if (intent.hasExtra(LOAD_URL)) {
-            intent.getStringExtra(LOAD_URL)
+        val htmlString = if (intent.hasExtra(HTML_STRING)) {
+            intent.getStringExtra(HTML_STRING)
         } else {
             null
         }
 
-        if (loadUrl.isNullOrEmpty()) {
+        if (htmlString.isNullOrEmpty()) {
             finish()
             return
         }
@@ -45,6 +44,7 @@ internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
                 FlareLaneJavascriptInterface(this@FlareLaneInAppWebViewActivity),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
             )
+            webView.setBackgroundColor(Color.TRANSPARENT)
         }
 
         with(webView.settings) {
@@ -57,17 +57,17 @@ internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-        webView.loadUrl(loadUrl)
+        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8",null)
+    }
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    finish()
-                }
-            }
-        })
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            finish()
+        }
     }
 
     override fun onStop() {
@@ -95,7 +95,6 @@ internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
     }
 
     override fun onClose() {
-
         finish()
     }
 
@@ -109,7 +108,7 @@ internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
     }
 
     companion object {
-        private const val LOAD_URL = "load_url"
+        private const val HTML_STRING = "html_string"
 
         internal fun show(context: Context, url: String) {
             context.startActivity(
@@ -117,7 +116,7 @@ internal class FlareLaneInAppWebViewActivity : AppCompatActivity(),
                     it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_CLEAR_TOP or
                             Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    it.putExtra(LOAD_URL, url)
+                    it.putExtra(HTML_STRING, url)
                 }
             )
         }

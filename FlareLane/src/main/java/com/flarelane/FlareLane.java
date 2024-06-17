@@ -1,6 +1,7 @@
 package com.flarelane;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.flarelane.webview.FlareLaneInAppWebViewActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -367,5 +369,12 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static void displayInApp(Activity activity) {
+        InAppService.getMessage$FlareLane_debug(htmlString -> {
+            FlareLaneInAppWebViewActivity.Companion.show$FlareLane_debug(activity, htmlString);
+            return null;
+        });
     }
 }
