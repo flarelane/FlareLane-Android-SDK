@@ -8,9 +8,12 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
+import com.flarelane.FlareLane
 import com.flarelane.R
 import com.flarelane.util.IntentUtil
 import com.flarelane.webview.jsinterface.FlareLaneInAppJavascriptInterface
@@ -37,9 +40,11 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
         setContentView(R.layout.activity_inapp_webview)
 
         webView = findViewById(R.id.web_view)
+        webView.visibility = View.INVISIBLE
 
         with(webView) {
             webChromeClient = flWebChromeClient
+            webViewClient = flWebViewClient
             addJavascriptInterface(
                 FlareLaneJavascriptInterface(this@FlareLaneInAppWebViewActivity),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
@@ -77,6 +82,10 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
         }
     }
 
+    override fun requestPushPermission(fallbackToSettings: Boolean) {
+        FlareLane.subscribe(this, fallbackToSettings, null)
+    }
+
     override fun onOpenUrl(url: String) {
         try {
             Uri.parse(url)?.let {
@@ -104,6 +113,13 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
         }
 
         override fun onProgressChanged(view: WebView, newProgress: Int) {
+        }
+    }
+
+    private val flWebViewClient = object : WebViewClient() {
+        override fun onPageFinished(view: WebView?, url: String?) {
+            super.onPageFinished(view, url)
+            webView.visibility = View.VISIBLE
         }
     }
 

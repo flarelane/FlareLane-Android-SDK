@@ -6,8 +6,12 @@ import com.flarelane.FlareLane
 import com.flarelane.util.toJSONObject
 import com.flarelane.util.toJSONObjectWithNull
 
-class FlareLaneInAppJavascriptInterface(private val context: Context, private val listener: Listener) {
+class FlareLaneInAppJavascriptInterface(
+    private val context: Context,
+    private val listener: Listener
+) {
     interface Listener {
+        fun requestPushPermission(fallbackToSettings: Boolean)
         fun onOpenUrl(url: String)
         fun onClose()
     }
@@ -24,6 +28,11 @@ class FlareLaneInAppJavascriptInterface(private val context: Context, private va
         jsonString.toJSONObjectWithNull {
             FlareLane.trackEvent(context, type, it)
         }
+    }
+
+    @JavascriptInterface
+    fun requestPushPermission(fallbackToSettings: Boolean = true) {
+        listener.requestPushPermission(fallbackToSettings)
     }
 
     @JavascriptInterface
