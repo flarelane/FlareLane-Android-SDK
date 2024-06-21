@@ -372,9 +372,15 @@ public class FlareLane {
     }
 
     public static void displayInApp(Activity activity) {
-        InAppService.getMessage$FlareLane_debug(htmlString -> {
-            FlareLaneInAppWebViewActivity.Companion.show$FlareLane_debug(activity, htmlString);
-            return null;
-        });
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(activity, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(activity, false);
+            InAppService.getMessage$FlareLane_debug(projectId, deviceId,  htmlString -> {
+                FlareLaneInAppWebViewActivity.Companion.show$FlareLane_debug(activity, htmlString);
+                return null;
+            });
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
     }
 }

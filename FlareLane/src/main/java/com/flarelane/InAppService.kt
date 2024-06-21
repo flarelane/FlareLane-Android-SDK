@@ -5,9 +5,9 @@ import org.json.JSONObject
 
 object InAppService {
     @JvmStatic
-    internal fun getMessage(callback: (String) -> Unit) {
+    internal fun getMessage(projectId: String, deviceId: String, callback: (String) -> Unit) {
         HTTPClient.get(
-            "internal/v1/projects/a43cdc82-0ea5-4fdd-aebc-1940fe99b6c3/devices/test/in-app-messages",
+            "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages",
             object : ResponseHandler() {
                 override fun onSuccess(responseCode: Int, response: JSONObject) {
                     try {
