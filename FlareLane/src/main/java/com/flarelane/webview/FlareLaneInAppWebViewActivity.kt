@@ -46,14 +46,17 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
             addJavascriptInterface(
-                FlareLaneJavascriptInterface(this@FlareLaneInAppWebViewActivity),
-                FlareLaneJavascriptInterface.BRIDGE_NAME
+                FlareLaneInAppJavascriptInterface(
+                    this@FlareLaneInAppWebViewActivity,
+                    this@FlareLaneInAppWebViewActivity
+                ),
+                FlareLaneInAppJavascriptInterface.BRIDGE_NAME
             )
             webView.setBackgroundColor(Color.TRANSPARENT)
         }
 
         with(webView.settings) {
-            cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            cacheMode = WebSettings.LOAD_NO_CACHE
             javaScriptEnabled = true
             domStorageEnabled = true
             loadWithOverviewMode = true
@@ -62,7 +65,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8",null)
+        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
     }
 
     @Deprecated("Deprecated in Java")
@@ -91,7 +94,8 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             Uri.parse(url)?.let {
                 IntentUtil.createIntentIfResolveActivity(this, it)?.let { intent ->
                     try {
-                        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        intent.flags =
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
                         startActivity(intent)
                     } catch (_: Exception) {
                         // 외부 앱을 실행할 수 없음
@@ -126,13 +130,13 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
     companion object {
         private const val HTML_STRING = "html_string"
 
-        internal fun show(context: Context, url: String) {
+        internal fun show(context: Context, htmlString: String) {
             context.startActivity(
                 Intent(context, FlareLaneInAppWebViewActivity::class.java).also {
                     it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_CLEAR_TOP or
                             Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    it.putExtra(HTML_STRING, url)
+                    it.putExtra(HTML_STRING, htmlString)
                 }
             )
         }
