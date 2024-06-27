@@ -15,6 +15,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.flarelane.FlareLane
 import com.flarelane.R
+import com.flarelane.model.ModelInAppMessage
 import com.flarelane.util.IntentUtil
 import com.flarelane.webview.jsinterface.FlareLaneInAppJavascriptInterface
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
@@ -26,13 +27,19 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val id = if (intent.hasExtra(ID)) {
+            intent.getStringExtra(ID)
+        } else {
+            null
+        }
+
         val htmlString = if (intent.hasExtra(HTML_STRING)) {
             intent.getStringExtra(HTML_STRING)
         } else {
             null
         }
 
-        if (htmlString.isNullOrEmpty()) {
+        if (id.isNullOrEmpty() || htmlString.isNullOrEmpty()) {
             finish()
             return
         }
@@ -48,6 +55,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             addJavascriptInterface(
                 FlareLaneInAppJavascriptInterface(
                     this@FlareLaneInAppWebViewActivity,
+                    id,
                     this@FlareLaneInAppWebViewActivity
                 ),
                 FlareLaneInAppJavascriptInterface.BRIDGE_NAME
@@ -65,7 +73,8 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
+        webView.loadUrl("https://minhyeok4dev.github.io/inapp4.html")
+//        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
     }
 
     @Deprecated("Deprecated in Java")
@@ -128,15 +137,17 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
     }
 
     companion object {
+        private const val ID = "id"
         private const val HTML_STRING = "html_string"
 
-        internal fun show(context: Context, htmlString: String) {
+        fun show(context: Context, modelInAppMessage: ModelInAppMessage) {
             context.startActivity(
                 Intent(context, FlareLaneInAppWebViewActivity::class.java).also {
                     it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or
                             Intent.FLAG_ACTIVITY_CLEAR_TOP or
                             Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    it.putExtra(HTML_STRING, htmlString)
+                    it.putExtra(ID, modelInAppMessage.id)
+                    it.putExtra(HTML_STRING, modelInAppMessage.htmlString)
                 }
             )
         }

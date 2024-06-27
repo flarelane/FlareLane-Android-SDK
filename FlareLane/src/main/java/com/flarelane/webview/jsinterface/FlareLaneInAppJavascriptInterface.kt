@@ -2,12 +2,15 @@ package com.flarelane.webview.jsinterface
 
 import android.content.Context
 import android.webkit.JavascriptInterface
+import com.flarelane.EventService
 import com.flarelane.FlareLane
+import com.flarelane.InAppMessageClickedEvent
 import com.flarelane.util.toJSONObject
 import com.flarelane.util.toJSONObjectWithNull
 
 class FlareLaneInAppJavascriptInterface(
     private val context: Context,
+    private val messageId: String,
     private val listener: Listener
 ) {
     interface Listener {
@@ -38,6 +41,14 @@ class FlareLaneInAppJavascriptInterface(
     @JavascriptInterface
     fun openUrl(url: String) {
         listener.onOpenUrl(url)
+    }
+
+    @JavascriptInterface
+    fun click(actionId: String) {
+        EventService.createInAppMessageClicked(
+            context,
+            InAppMessageClickedEvent(messageId, actionId)
+        )
     }
 
     @JavascriptInterface

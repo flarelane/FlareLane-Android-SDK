@@ -31,6 +31,9 @@ public class FlareLane {
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
     protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;
+
+    protected static com.flarelane.InAppMessageClickedHandler inAppMessageClickedHandler = null;
+
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
     private static Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -88,6 +91,10 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static void setInAppMessageClickedHandler(com.flarelane.InAppMessageClickedHandler handler) {
+        FlareLane.inAppMessageClickedHandler = handler;
     }
 
     public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
@@ -375,8 +382,8 @@ public class FlareLane {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(activity, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(activity, false);
-            InAppService.getMessage$FlareLane_debug(projectId, deviceId,  htmlString -> {
-                FlareLaneInAppWebViewActivity.Companion.show$FlareLane_debug(activity, htmlString);
+            InAppService.getMessage(projectId, deviceId, modelInAppMessage -> {
+                FlareLaneInAppWebViewActivity.Companion.show(activity, modelInAppMessage);
                 return null;
             });
         } catch (Exception e) {
