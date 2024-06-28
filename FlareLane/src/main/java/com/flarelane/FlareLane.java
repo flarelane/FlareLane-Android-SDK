@@ -1,6 +1,7 @@
 package com.flarelane;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
+import com.flarelane.webview.FlareLaneInAppWebViewActivity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -29,6 +31,9 @@ public class FlareLane {
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
     protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;
+
+    protected static com.flarelane.InAppMessageClickedHandler inAppMessageClickedHandler = null;
+
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
     private static Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -86,6 +91,10 @@ public class FlareLane {
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
+    }
+
+    public static void setInAppMessageClickedHandler(com.flarelane.InAppMessageClickedHandler handler) {
+        FlareLane.inAppMessageClickedHandler = handler;
     }
 
     public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
@@ -363,6 +372,19 @@ public class FlareLane {
                         BaseErrorHandler.handle(e);
                     }
                 }
+            });
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
+
+    public static void displayInApp(Activity activity) {
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(activity, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(activity, false);
+            InAppService.getMessage(projectId, deviceId, modelInAppMessage -> {
+                FlareLaneInAppWebViewActivity.Companion.show(activity, modelInAppMessage);
+                return null;
             });
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
