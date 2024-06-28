@@ -19,6 +19,7 @@ import com.flarelane.R
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 import com.google.android.material.appbar.AppBarLayout
 
+
 internal class FlareLaneWebViewActivity : AppCompatActivity() {
     private lateinit var appBarLayout: AppBarLayout
     private lateinit var ibBack: ImageButton
@@ -40,7 +41,7 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
             return
         }
 
-        setContentView(R.layout.activity_webview)
+        setContentView(R.layout.flarelane_activity_webview)
 
         appBarLayout = findViewById(R.id.app_bar_layout)
         ibBack = findViewById(R.id.ib_back)
