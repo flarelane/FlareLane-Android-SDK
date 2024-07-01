@@ -14,6 +14,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.flarelane.FlareLane
+import com.flarelane.InAppService
 import com.flarelane.R
 import com.flarelane.model.ModelInAppMessage
 import com.flarelane.util.IntentUtil
@@ -73,8 +74,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-        webView.loadUrl("https://minhyeok4dev.github.io/inapp4.html")
-//        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
+        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
     }
 
     @Deprecated("Deprecated in Java")
@@ -92,6 +92,11 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
         if (webView.originalUrl.isNullOrEmpty()) {
             super.finish()
         }
+    }
+
+    override fun finish() {
+        InAppService.isDisplaying = false
+        super.finish()
     }
 
     override fun requestPushPermission(fallbackToSettings: Boolean) {

@@ -5,8 +5,15 @@ import com.flarelane.model.ModelInAppMessage
 import org.json.JSONObject
 
 internal object InAppService {
+    var isDisplaying = false
+
     @JvmStatic
     fun getMessage(projectId: String, deviceId: String, callback: (ModelInAppMessage?) -> Unit) {
+        if (isDisplaying) {
+            return
+        }
+        isDisplaying = true
+        
         HTTPClient.get(
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages",
             object : ResponseHandler() {
@@ -20,6 +27,7 @@ internal object InAppService {
                         )
                         callback.invoke(model)
                     } catch (e: Exception) {
+                        isDisplaying = false
                         BaseErrorHandler.handle(e)
                     }
                 }
