@@ -39,7 +39,7 @@ internal class FlareLaneWebViewActivity : Activity() {
             return
         }
 
-        setContentView(R.layout.activity_webview)
+        setContentView(R.layout.flarelane_activity_webview)
 
         appBarLayout = findViewById(R.id.app_bar_layout)
         ibBack = findViewById(R.id.ib_back)
