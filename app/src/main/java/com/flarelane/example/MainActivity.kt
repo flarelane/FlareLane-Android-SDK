@@ -120,6 +120,10 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("from", "0")
             sendBroadcast(intent)
         }
+
+        findViewById<Button>(R.id.btn_in_app_message).setOnClickListener {
+            FlareLane.displayInApp(this)
+        }
     }
 
     // FOR FIREBASE: https://firebase.google.com/docs/cloud-messaging/android/client
