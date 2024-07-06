@@ -4,7 +4,7 @@ import android.content.Context
 import android.webkit.JavascriptInterface
 import com.flarelane.EventService
 import com.flarelane.FlareLane
-import com.flarelane.InAppMessageClickedEvent
+import com.flarelane.InAppMessage
 import com.flarelane.util.toJSONObject
 import com.flarelane.util.toJSONObjectWithNull
 
@@ -44,10 +44,13 @@ class FlareLaneInAppJavascriptInterface(
     }
 
     @JavascriptInterface
-    fun click(actionId: String) {
-        EventService.createInAppMessageClicked(
+    fun executeAction(actionId: String) {
+        var iam = InAppMessage(messageId)
+
+        EventService.executeInAppMessageAction(
             context,
-            InAppMessageClickedEvent(messageId, actionId)
+            iam,
+            actionId
         )
     }
 

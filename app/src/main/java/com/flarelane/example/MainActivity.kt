@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btn_in_app_message).setOnClickListener {
-            FlareLane.displayInApp(this)
+            FlareLane.displayInApp(this, "home")
         }
     }
 

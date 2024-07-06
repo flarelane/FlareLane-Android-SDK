@@ -3,7 +3,11 @@ package com.flarelane.example;
 import android.app.Application;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.flarelane.FlareLane;
+import com.flarelane.InAppMessage;
+import com.flarelane.InAppMessageActionHandler;
 import com.flarelane.Notification;
 import com.flarelane.NotificationClickedHandler;
 import com.flarelane.NotificationForegroundReceivedHandler;
@@ -43,6 +47,15 @@ public class MainApplication extends Application {
                 } catch (Exception e) {}
             }
         }));
+
+        FlareLane.setInAppMessageActionHandler(new InAppMessageActionHandler() {
+            @Override
+            public void onExecute(@NonNull InAppMessage iam, @NonNull String actionId) {
+                Log.d("FlareLane", "setInAppMessageActionHandler.onExecute: " + iam.toString() + " actionId: " + actionId);
+            }
+        });
+
+
     }
 
 }

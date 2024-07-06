@@ -32,7 +32,7 @@ public class FlareLane {
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
     protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;
 
-    protected static com.flarelane.InAppMessageClickedHandler inAppMessageClickedHandler = null;
+    protected static com.flarelane.InAppMessageActionHandler inAppMessageActionHandler = null;
 
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
@@ -93,8 +93,9 @@ public class FlareLane {
         }
     }
 
-    public static void setInAppMessageClickedHandler(com.flarelane.InAppMessageClickedHandler handler) {
-        FlareLane.inAppMessageClickedHandler = handler;
+    public static void setInAppMessageActionHandler(com.flarelane.InAppMessageActionHandler handler) {
+        FlareLane.inAppMessageActionHandler = handler;
+        Logger.verbose("inAppMessageActionHandler has been registered.");
     }
 
     public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
@@ -378,11 +379,11 @@ public class FlareLane {
         }
     }
 
-    public static void displayInApp(Context context) {
+    public static void displayInApp(Context context, String group) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-            InAppService.getMessage(projectId, deviceId, modelInAppMessage -> {
+            InAppService.getMessage(projectId, deviceId, group, modelInAppMessage -> {
                 FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
                 return null;
             });

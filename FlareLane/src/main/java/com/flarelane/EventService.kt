@@ -24,16 +24,17 @@ internal object EventService {
     }
 
     @Throws(Exception::class)
-    fun createInAppMessageClicked(
+    fun executeInAppMessageAction(
         context: Context,
-        inAppMessageClickedEvent: InAppMessageClickedEvent
+        iam: InAppMessage,
+        actionId: String
     ) {
         val projectId = BaseSharedPreferences.getProjectId(context, false)
         val deviceId = BaseSharedPreferences.getDeviceId(context, false)
 //        EventService.create(projectId, deviceId, notification.id, EventType.Clicked);
 
-        if (FlareLane.inAppMessageClickedHandler != null) {
-            FlareLane.inAppMessageClickedHandler.onClicked(inAppMessageClickedEvent)
+        if (FlareLane.inAppMessageActionHandler != null) {
+            FlareLane.inAppMessageActionHandler.onExecute(iam, actionId)
         }
     }
 
