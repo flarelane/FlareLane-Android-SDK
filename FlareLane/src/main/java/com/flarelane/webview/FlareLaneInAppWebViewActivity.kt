@@ -74,7 +74,8 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
+//        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
+        webView.loadUrl("https://minhyeok4dev.github.io/inapp4.html")
     }
 
     @Deprecated("Deprecated in Java")

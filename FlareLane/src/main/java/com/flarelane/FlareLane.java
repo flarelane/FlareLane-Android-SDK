@@ -378,12 +378,12 @@ public class FlareLane {
         }
     }
 
-    public static void displayInApp(Activity activity) {
+    public static void displayInApp(Context context) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(activity, false);
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(activity, false);
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
             InAppService.getMessage(projectId, deviceId, modelInAppMessage -> {
-                FlareLaneInAppWebViewActivity.Companion.show(activity, modelInAppMessage);
+                FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
                 return null;
             });
         } catch (Exception e) {
