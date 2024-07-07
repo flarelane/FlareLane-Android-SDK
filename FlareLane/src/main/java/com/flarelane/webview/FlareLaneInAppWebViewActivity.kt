@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.webkit.WebChromeClient
@@ -28,6 +29,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val id = if (intent.hasExtra(ID)) {
             intent.getStringExtra(ID)
         } else {
@@ -97,7 +99,14 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
 
     override fun finish() {
         InAppService.isDisplaying = false
+
         super.finish()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, 0, 0)
+        } else {
+            overridePendingTransition(0,0)
+        }
     }
 
     override fun requestPushPermission(fallbackToSettings: Boolean) {
