@@ -1,6 +1,8 @@
 package com.flarelane
 
 object Constants {
+    internal const val SDK_PLATFORM = "android"
+
     internal const val ID_IC_STAT_DEFAULT = "ic_stat_flarelane_default"
     internal const val DEFAULT_CHANNEL_ID = "flarelane_default_channel_id"
     internal const val DEFAULT_CHANNEL_NAME = "flarelane_default_channel_name"

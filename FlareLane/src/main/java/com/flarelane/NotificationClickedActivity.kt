@@ -20,7 +20,9 @@ internal class NotificationClickedActivity : Activity() {
 
             val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)
             val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)
-            EventService.createNotificationClicked(projectId, deviceId, notification)
+            val userId = BaseSharedPreferences.getUserId(this.applicationContext, true)
+
+            EventService.createNotificationClicked(projectId, deviceId, notification, userId)
             handleNotificationClicked(notification)
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)

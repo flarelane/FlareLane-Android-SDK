@@ -150,6 +150,17 @@ public class FlareLane {
         return null;
     }
 
+    public static String getUserId(Context context) {
+        try {
+            String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
+            return userId;
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+
+        return null;
+    }
+
     public static boolean isSubscribed(Context context) {
         try {
             // As cannot controlled, not check targetSdkVersion.
@@ -225,10 +236,7 @@ public class FlareLane {
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
             String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
 
-            String subjectType = userId != null ? "user" : "device";
-            String subjectId = userId != null ? userId : deviceId;
-
-            com.flarelane.EventService.trackEvent(projectId, subjectType, subjectId, type, data);
+            com.flarelane.EventService.trackEvent(projectId, deviceId, userId, type, data);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }

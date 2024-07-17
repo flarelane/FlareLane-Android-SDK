@@ -32,7 +32,7 @@ class WebViewBridgeTestActivity : AppCompatActivity() {
 
             // add FlareLane javascript interface
             addJavascriptInterface(
-                FlareLaneJavascriptInterface(this@WebViewBridgeTestActivity),
+                FlareLaneJavascriptInterface(this@WebViewBridgeTestActivity, webView),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
             )
 

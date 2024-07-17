@@ -12,9 +12,10 @@ internal object EventService {
     fun createNotificationClicked(
         projectId: String,
         deviceId: String,
-        notification: Notification
+        notification: Notification,
+        userId: String?
     ) {
-        create(projectId, deviceId, notification.id, EventType.Clicked)
+        create(projectId, deviceId, notification.id, EventType.Clicked, userId)
 
         if (FlareLane.notificationClickedHandler != null) {
             FlareLane.notificationClickedHandler.onClicked(notification)
@@ -40,24 +41,28 @@ internal object EventService {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createBackgroundReceived(projectId: String, deviceId: String, notification: Notification) {
-        create(projectId, deviceId, notification.id, EventType.BackgroundReceived)
+    fun createBackgroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
+        create(projectId, deviceId, notification.id, EventType.BackgroundReceived, userId)
     }
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createForegroundReceived(projectId: String, deviceId: String, notification: Notification) {
-        create(projectId, deviceId, notification.id, EventType.ForegroundReceived)
+    fun createForegroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
+        create(projectId, deviceId, notification.id, EventType.ForegroundReceived, userId)
     }
 
     @Throws(Exception::class)
-    private fun create(projectId: String, deviceId: String, notificationId: String, type: String) {
+    private fun create(projectId: String, deviceId: String, notificationId: String, type: String, userId: String?) {
         val body = JSONObject()
         body.put("notificationId", notificationId)
         body.put("deviceId", deviceId)
-        body.put("platform", "android")
+        body.put("platform", Constants.SDK_PLATFORM)
         body.put("type", type)
         body.put("createdAt", Utils.getISO8601DateString())
+
+        if (userId != null) {
+            body.put("userId", userId)
+        }
 
         HTTPClient.post(
             "internal/v1/projects/$projectId/events",
@@ -70,19 +75,28 @@ internal object EventService {
     @Throws(Exception::class)
     fun trackEvent(
         projectId: String,
-        subjectType: String?,
-        subjectId: String?,
-        type: String?,
+        deviceId: String,
+        userId: String?,
+        type: String,
         data: JSONObject?
     ) {
+        val subjectType = if (userId != null) "user" else "device"
+        val subjectId = userId ?: deviceId
+
         val event = JSONObject()
             .put("type", type)
             .put("subjectType", subjectType)
             .put("subjectId", subjectId)
             .put("createdAt", Utils.getISO8601DateString())
+            .put("platform", Constants.SDK_PLATFORM)
+            .put("deviceId", deviceId)
 
         if (data != null) {
             event.put("data", data)
+        }
+
+        if (userId != null) {
+            event.put("userId", userId)
         }
 
         val body = JSONObject().put("events", JSONArray().put(event))

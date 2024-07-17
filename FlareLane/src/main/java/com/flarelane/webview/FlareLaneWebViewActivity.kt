@@ -57,7 +57,7 @@ internal class FlareLaneWebViewActivity : Activity() {
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
             addJavascriptInterface(
-                FlareLaneJavascriptInterface(this@FlareLaneWebViewActivity),
+                FlareLaneJavascriptInterface(this@FlareLaneWebViewActivity, webView),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
             )
         }
