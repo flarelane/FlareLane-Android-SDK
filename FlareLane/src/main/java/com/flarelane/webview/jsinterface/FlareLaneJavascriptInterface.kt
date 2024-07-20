@@ -5,6 +5,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import com.flarelane.Constants
 import com.flarelane.FlareLane
+import com.flarelane.Logger
 import com.flarelane.util.toJSONObject
 import com.flarelane.util.toJSONObjectWithNull
 import org.json.JSONObject
@@ -19,9 +20,12 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
             "userId" to FlareLane.getUserId(context)
         )
         val jsonString = JSONObject(data).toString()
+        var script = "FlareLane.syncDeviceDataCallback($jsonString)"
+
+        Logger.verbose("executed syncDeviceData from webView: $script")
 
         webView.post {
-            webView.evaluateJavascript("FlareLane.syncDeviceDataCallback($jsonString)", null)
+            webView.evaluateJavascript(script, null)
         }
     }
 

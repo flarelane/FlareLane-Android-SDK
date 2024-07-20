@@ -10,24 +10,30 @@ internal object InAppService {
     @JvmStatic
     fun getMessage(projectId: String, deviceId: String, group: String, callback: (ModelInAppMessage?) -> Unit) {
         if (isDisplaying) {
+            Logger.verbose("IAM is already displaying.")
             return
         }
         isDisplaying = true
-        
-        HTTPClient.get(
+
+        HTTPClient.post(
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages?group=$group",
+            null,
             object : ResponseHandler() {
                 override fun onSuccess(responseCode: Int, response: JSONObject) {
                     try {
-                        val jsonArray = response.getJSONArray("data")
-                        val jsonObject = jsonArray.getJSONObject(0)
-                        val model = ModelInAppMessage(
-                            id = jsonObject.getString("id"),
-                            htmlString = jsonObject.getString("htmlString")
-                        )
-                        callback.invoke(model)
-                    } catch (e: Exception) {
                         isDisplaying = false
+                        val jsonArray = response.getJSONArray("data")
+                        if (jsonArray.length() > 0) {
+                            val jsonObject = jsonArray.getJSONObject(0)
+                            val model = ModelInAppMessage(
+                                id = jsonObject.getString("id"),
+                                htmlString = jsonObject.getString("htmlString")
+                            )
+                            callback.invoke(model)
+                        } else {
+                            Logger.verbose("There is no displayable IAM")
+                        }
+                    } catch (e: Exception) {
                         BaseErrorHandler.handle(e)
                     }
                 }

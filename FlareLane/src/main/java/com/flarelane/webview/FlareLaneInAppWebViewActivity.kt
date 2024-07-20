@@ -22,6 +22,7 @@ import com.flarelane.util.IntentUtil
 import com.flarelane.webview.jsinterface.FlareLaneInAppJavascriptInterface
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 
+
 internal class FlareLaneInAppWebViewActivity : Activity(),
     FlareLaneInAppJavascriptInterface.Listener {
     private lateinit var webView: WebView
@@ -76,8 +77,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             javaScriptCanOpenWindowsAutomatically = true
         }
 
-//        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
-        webView.loadUrl("https://minhyeok4dev.github.io/inapp4.html")
+        webView.loadDataWithBaseURL(null, htmlString, "text/html; charset=utf-8", "utf-8", null)
     }
 
     @Deprecated("Deprecated in Java")

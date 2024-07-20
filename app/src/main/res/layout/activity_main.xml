@@ -67,6 +67,12 @@
             android:text="WebView Bridge Test" />
 
         <Button
+            android:id="@+id/btn_webView_test"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="WebView Test" />
+
+        <Button
             android:id="@+id/btn_url_notification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -76,7 +82,7 @@
             android:id="@+id/btn_in_app_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Show In App Message" />
+            android:text="displayInApp" />
 
     </LinearLayout>
 
