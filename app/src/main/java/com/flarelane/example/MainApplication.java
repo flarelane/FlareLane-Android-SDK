@@ -55,8 +55,5 @@ public class MainApplication extends Application {
                 Log.d("FlareLane", "setInAppMessageActionHandler.onExecute: " + iam.toString() + " actionId: " + actionId);
             }
         });
-
-
     }
-
 }

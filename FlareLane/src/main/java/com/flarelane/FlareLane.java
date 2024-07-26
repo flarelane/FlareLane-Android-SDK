@@ -142,7 +142,7 @@ public class FlareLane {
 
     public static String getDeviceId(Context context) {
         try {
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
             return deviceId;
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
@@ -155,6 +155,17 @@ public class FlareLane {
         try {
             String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
             return userId;
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+
+        return null;
+    }
+
+    public static String getProjectId(Context context) {
+        try {
+            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+            return projectId;
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }

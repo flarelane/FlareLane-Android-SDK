@@ -3,8 +3,10 @@ package com.flarelane.example
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
@@ -29,8 +31,12 @@ class WebViewTestActivity : AppCompatActivity() {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
-
             webChromeClient = WebChromeClient()
+            webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    return false
+                }
+            }
 
             // add FlareLane javascript interface
             addJavascriptInterface(

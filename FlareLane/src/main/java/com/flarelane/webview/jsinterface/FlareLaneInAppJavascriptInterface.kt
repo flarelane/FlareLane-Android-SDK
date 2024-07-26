@@ -55,7 +55,7 @@ class FlareLaneInAppJavascriptInterface(
     }
 
     @JavascriptInterface
-    fun close(dontShowDays: Int) {
+    fun close(dontShowMinutes: Int) {
         listener.onClose()
     }
 

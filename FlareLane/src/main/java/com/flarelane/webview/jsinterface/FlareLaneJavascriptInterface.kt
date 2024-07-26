@@ -1,5 +1,6 @@
 package com.flarelane.webview.jsinterface
 
+import android.app.Activity
 import android.content.Context
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -15,6 +16,7 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
     @JavascriptInterface
     fun syncDeviceData() {
         val data: Map<String, Any> = mapOf(
+            "projectId" to FlareLane.getProjectId(context),
             "platform" to Constants.SDK_PLATFORM,
             "deviceId" to FlareLane.getDeviceId(context),
             "userId" to FlareLane.getUserId(context)
@@ -45,6 +47,15 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
     fun trackEvent(type: String, jsonString: String?) {
         jsonString.toJSONObjectWithNull {
             FlareLane.trackEvent(context, type, it)
+        }
+    }
+
+    @JavascriptInterface
+    fun openUrl(url: String) {
+        if (context is Activity) {
+            context.runOnUiThread {
+                webView.loadUrl(url)
+            }
         }
     }
 
