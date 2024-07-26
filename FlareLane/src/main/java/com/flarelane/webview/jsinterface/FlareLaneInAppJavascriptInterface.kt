@@ -35,7 +35,12 @@ class FlareLaneInAppJavascriptInterface(
 
     @JavascriptInterface
     fun requestPushPermission(fallbackToSettings: Boolean = true) {
-        listener.requestPushPermission(fallbackToSettings)
+        var isSubscribed = FlareLane.isSubscribed(context)
+        if (isSubscribed) {
+            close(10)
+        } else {
+            listener.requestPushPermission(fallbackToSettings)
+        }
     }
 
     @JavascriptInterface
