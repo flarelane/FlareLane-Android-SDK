@@ -16,14 +16,13 @@ import com.flarelane.NotificationReceivedEvent;
 import org.json.JSONObject;
 
 public class MainApplication extends Application {
-    private static final String FLARELANE_PROJECT_ID = "6be7d281-5cdc-4c1e-b441-73a585322bff";
+    private static final String FLARELANE_PROJECT_ID = "FLARELANE_PROJECT_ID";
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         FlareLane.setLogLevel(Log.VERBOSE);
-        FlareLane.setUserId(this, "test");
         FlareLane.initWithContext(this, FLARELANE_PROJECT_ID, false);
         FlareLane.setNotificationClickedHandler(new NotificationClickedHandler() {
             @Override
