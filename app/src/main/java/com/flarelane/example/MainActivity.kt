@@ -108,6 +108,14 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        findViewById<Button>(R.id.btn_webView_test).setOnClickListener {
+            startActivity(
+                Intent(it.context, WebViewTestActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                }
+            )
+        }
+
         findViewById<Button>(R.id.btn_url_notification).setOnClickListener {
             val testUrl = "https://www.google.com"
             val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
@@ -120,6 +128,12 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("from", "0")
             sendBroadcast(intent)
         }
+
+        findViewById<Button>(R.id.btn_in_app_message).setOnClickListener {
+            FlareLane.displayInApp(this, "home")
+        }
+
+        FlareLane.displayInApp(this, "home");
     }
 
     // FOR FIREBASE: https://firebase.google.com/docs/cloud-messaging/android/client

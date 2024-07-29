@@ -18,7 +18,7 @@ import java.util.TimeZone;
 class DeviceService {
     static JSONObject getSystemInfo() throws Exception {
         JSONObject data = new JSONObject();
-        data.put("platform", "android");
+        data.put("platform", Constants.SDK_PLATFORM);
         data.put("deviceModel", Build.MODEL);
         data.put("osVersion", String.valueOf(Build.VERSION.RELEASE));
         data.put("sdkVersion", FlareLane.SdkInfo.version);

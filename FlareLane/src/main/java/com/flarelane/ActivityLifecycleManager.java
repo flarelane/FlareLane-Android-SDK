@@ -35,7 +35,7 @@ class ActivityLifecycleManager {
                 return;
             }
             activitySet.add(activity);
-            FlareLane.deviceRegisterOrActivate(activity.getApplicationContext());
+            FlareLane.deviceRegisterOrActivate(activity.getApplicationContext(), null);
         }
 
         @Override

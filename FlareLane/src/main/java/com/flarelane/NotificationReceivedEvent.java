@@ -41,6 +41,7 @@ public class NotificationReceivedEvent {
             Notification flarelaneNotification = this.getNotification();
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+            String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
 
             boolean isForeground = (Helper.appInForeground(context));
 
@@ -107,9 +108,9 @@ public class NotificationReceivedEvent {
                         notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
 
                         if (isForeground) {
-                            EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification);
+                            EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification, userId);
                         } else {
-                            EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification);
+                            EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification, userId);
                         }
                     } catch (Exception e) {
                         BaseErrorHandler.handle(e);

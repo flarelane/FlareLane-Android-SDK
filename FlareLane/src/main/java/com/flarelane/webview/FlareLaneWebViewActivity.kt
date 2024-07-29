@@ -1,6 +1,7 @@
 package com.flarelane.webview
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -13,14 +14,11 @@ import android.webkit.WebView
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AppCompatActivity
 import com.flarelane.R
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 import com.google.android.material.appbar.AppBarLayout
 
-
-internal class FlareLaneWebViewActivity : AppCompatActivity() {
+internal class FlareLaneWebViewActivity : Activity() {
     private lateinit var appBarLayout: AppBarLayout
     private lateinit var ibBack: ImageButton
     private lateinit var tvUrl: TextView
@@ -59,7 +57,7 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
             webChromeClient = flWebChromeClient
             webViewClient = flWebViewClient
             addJavascriptInterface(
-                FlareLaneJavascriptInterface(this@FlareLaneWebViewActivity),
+                FlareLaneJavascriptInterface(this@FlareLaneWebViewActivity, webView),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
             )
         }
@@ -75,16 +73,16 @@ internal class FlareLaneWebViewActivity : AppCompatActivity() {
         }
 
         webView.loadUrl(loadUrl)
+    }
 
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    finish()
-                }
-            }
-        })
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            finish()
+        }
     }
 
     override fun onStop() {

@@ -45,6 +45,11 @@
             android:exported="false"
             android:hardwareAccelerated="true"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity
+            android:name=".webview.FlareLaneInAppWebViewActivity"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 
     <queries>

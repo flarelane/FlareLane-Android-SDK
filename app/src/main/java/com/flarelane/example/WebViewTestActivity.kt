@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import com.flarelane.webview.jsinterface.FlareLaneJavascriptInterface
 
-class WebViewBridgeTestActivity : AppCompatActivity() {
+class WebViewTestActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,6 +29,7 @@ class WebViewBridgeTestActivity : AppCompatActivity() {
         val webView: WebView = findViewById(R.id.web_view)
         with(webView) {
             settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
             settings.cacheMode = WebSettings.LOAD_NO_CACHE
             webChromeClient = WebChromeClient()
             webViewClient = object : WebViewClient() {
@@ -39,11 +40,11 @@ class WebViewBridgeTestActivity : AppCompatActivity() {
 
             // add FlareLane javascript interface
             addJavascriptInterface(
-                FlareLaneJavascriptInterface(this@WebViewBridgeTestActivity, webView),
+                FlareLaneJavascriptInterface(this@WebViewTestActivity, webView),
                 FlareLaneJavascriptInterface.BRIDGE_NAME
             )
 
-            loadUrl(ASSET_FILE_PATH + LOCAL_HTML_FILE)
+            loadUrl("https://junyeongchoi.github.io/")
         }
     }
 

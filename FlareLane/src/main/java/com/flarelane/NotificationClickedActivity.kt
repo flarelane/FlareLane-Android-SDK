@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Bundle
 import com.flarelane.util.AndroidUtils
 import com.flarelane.util.IntentUtil
-import com.flarelane.util.PlayStoreInfo
 import com.flarelane.util.getParcelableDataClass
 import com.flarelane.webview.FlareLaneWebViewActivity
 
@@ -21,7 +20,9 @@ internal class NotificationClickedActivity : Activity() {
 
             val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)
             val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)
-            EventService.createClicked(projectId, deviceId, notification)
+            val userId = BaseSharedPreferences.getUserId(this.applicationContext, true)
+
+            EventService.createNotificationClicked(projectId, deviceId, notification, userId)
             handleNotificationClicked(notification)
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
