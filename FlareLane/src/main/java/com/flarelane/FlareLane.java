@@ -1,7 +1,6 @@
 package com.flarelane;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -20,14 +19,11 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-
 
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.7.0";
+        public static String version = "1.7.1";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -37,23 +33,11 @@ public class FlareLane {
 
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
-    private static Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     protected static boolean isActivated = false;
 
-    private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
-
-    private static CompletableFuture<Void> initFuture = new CompletableFuture<>();
-
-    private static void afterInit(Runnable task) {
-        new Thread(() -> {
-            try {
-                initFuture.get();
-                task.run();
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        }).start();
-    }
+    private static final com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
+    private static final TaskQueueManager taskQueueManager = new TaskQueueManager();
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
@@ -70,15 +54,16 @@ public class FlareLane {
             }
 
             deviceRegisterOrActivate(context, () -> {
-                initFuture.complete(null);
-            });
+                Application application = (Application) context.getApplicationContext();
+                application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
 
-            Application application = (Application) context.getApplicationContext();
-            application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
+                taskQueueManager.onInitialized();
+            });
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
     }
+
 
     // TODO: (Deprecated) FlareLane 클래스 내 코드로 아이콘 변경할 수 없도록 할 예정 (기본 리소스 이름을 인식하게 하거나, Notification 의 변수 값으로 동적 할당 예정)
     public static void setNotificationIcon(int notificationIcon) {
@@ -123,7 +108,7 @@ public class FlareLane {
     }
 
     public static void setUserId(Context context, String userId) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
                 JSONObject data = new JSONObject();
                 data.put("userId", userId == null ? JSONObject.NULL : userId);
@@ -132,6 +117,7 @@ public class FlareLane {
                     @Override
                     public void onSuccess(com.flarelane.Device device) {
                         BaseSharedPreferences.setUserId(context, device.userId);
+                        taskQueueManager.onTaskComplete();
                     }
                 });
             } catch (Exception e) {
@@ -142,8 +128,7 @@ public class FlareLane {
 
     public static String getDeviceId(Context context) {
         try {
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-            return deviceId;
+            return BaseSharedPreferences.getDeviceId(context, false);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -153,8 +138,7 @@ public class FlareLane {
 
     public static String getUserId(Context context) {
         try {
-            String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
-            return userId;
+            return BaseSharedPreferences.getUserId(context, true);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -164,8 +148,7 @@ public class FlareLane {
 
     public static String getProjectId(Context context) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-            return projectId;
+            return BaseSharedPreferences.getProjectId(context, false);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -187,9 +170,20 @@ public class FlareLane {
     }
 
     public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
-                PermissionActivity.isSubscribedHandler = handler;
+                IsSubscribedHandler handlerWithCompleteTask = new IsSubscribedHandler() {
+                    @Override
+                    public void onSuccess(boolean isSubscribed) {
+                        if (handler != null)
+                            handler.onSuccess(isSubscribed);
+
+                        taskQueueManager.onTaskComplete();
+                    }
+                };
+
+
+                PermissionActivity.isSubscribedHandler = handlerWithCompleteTask;
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
@@ -210,10 +204,10 @@ public class FlareLane {
                             }
                         }).start();
                     } else {
-                        requestPermissionForNotifications(context, handler);
+                        requestPermissionForNotifications(context, handlerWithCompleteTask);
                     }
                 } else {
-                    subscribeWithPushToken(context, handler);
+                    subscribeWithPushToken(context, handlerWithCompleteTask);
                 }
             } catch (Exception e) {
                 com.flarelane.BaseErrorHandler.handle(e);
@@ -222,7 +216,7 @@ public class FlareLane {
     }
 
     public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
                 JSONObject data = new JSONObject();
                 data.put("isSubscribed", false);
@@ -238,6 +232,7 @@ public class FlareLane {
                                 }
                             });
                         }
+                        taskQueueManager.onTaskComplete();
                     }
                 });
             } catch (Exception e) {
@@ -247,21 +242,23 @@ public class FlareLane {
     }
 
     public static void trackEvent(Context context, String type, JSONObject data) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
                 String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
                 String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
 
                 com.flarelane.EventService.trackEvent(projectId, deviceId, userId, type, data);
+                taskQueueManager.onTaskComplete();
             } catch (Exception e) {
                 com.flarelane.BaseErrorHandler.handle(e);
             }
         });
+
     }
 
     public static void setTags(Context context, JSONObject tags) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
                 JSONObject data = new JSONObject();
                 data.put("tags", tags);
@@ -269,6 +266,7 @@ public class FlareLane {
                 com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(com.flarelane.Device device) {
+                        taskQueueManager.onTaskComplete();
                     }
                 });
             } catch (Exception e) {
@@ -278,12 +276,13 @@ public class FlareLane {
     }
 
     public static void displayInApp(Context context, String group) {
-        afterInit(() -> {
+        taskQueueManager.addTask(() -> {
             try {
                 String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
                 String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
                 InAppService.getMessage(projectId, deviceId, group, modelInAppMessage -> {
                     FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
+                    taskQueueManager.onTaskComplete();
                     return null;
                 });
             } catch (Exception e) {
