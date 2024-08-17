@@ -62,7 +62,14 @@ class TaskQueueManager {
         });
 
         // Run the task
-        new Thread(task).start();
+        new Thread(() -> {
+            try {
+                task.run();
+            } catch (Exception e) {
+                Logger.error("Error executing task: " + task.getTaskName());
+                completeTask(); // Ensure completeTask is called even on error
+            }
+        }).start();
     }
 
     // Process the next task in the queue.

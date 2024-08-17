@@ -119,12 +119,11 @@ public class FlareLane {
                         @Override
                         public void onSuccess(com.flarelane.Device device) {
                             BaseSharedPreferences.setUserId(context, device.userId);
-                            completeTask();  // Notify that the task is complete
+                            completeTask();
                         }
                     });
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
-                    completeTask();  // Ensure the task is marked as complete on exception
                 }
             }
         });
