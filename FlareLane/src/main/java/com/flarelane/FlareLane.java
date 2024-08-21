@@ -330,7 +330,10 @@ public class FlareLane {
             if (projectId == null || projectId.trim().isEmpty()) return;
 
             // Execute only once.
-            if (!Helper.appInForeground(context) || isActivated) return;
+            if (!Helper.appInForeground(context) || isActivated) {
+                if (callback != null) callback.run();
+                return;
+            }
             isActivated = true;
 
             String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
