@@ -24,6 +24,7 @@ public class MainApplication extends Application {
 
         FlareLane.setLogLevel(Log.VERBOSE);
         FlareLane.initWithContext(this, FLARELANE_PROJECT_ID, false);
+
         FlareLane.setNotificationClickedHandler(new NotificationClickedHandler() {
             @Override
             public void onClicked(Notification notification) {
@@ -44,7 +45,8 @@ public class MainApplication extends Application {
                     if (dismissForegroundNotification) return;
 
                     notificationReceivedEvent.display();
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                }
             }
         }));
 

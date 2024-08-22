@@ -1,7 +1,6 @@
 package com.flarelane;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
@@ -20,14 +19,11 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-
 
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.7.0";
+        public static String version = "1.7.1";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -37,23 +33,11 @@ public class FlareLane {
 
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
-    private static Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     protected static boolean isActivated = false;
 
-    private static com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
-
-    private static CompletableFuture<Void> initFuture = new CompletableFuture<>();
-
-    private static void afterInit(Runnable task) {
-        new Thread(() -> {
-            try {
-                initFuture.get();
-                task.run();
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        }).start();
-    }
+    private static final com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
+    private static final TaskQueueManager taskQueueManager = TaskQueueManager.getInstance();
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
@@ -70,15 +54,16 @@ public class FlareLane {
             }
 
             deviceRegisterOrActivate(context, () -> {
-                initFuture.complete(null);
-            });
+                Application application = (Application) context.getApplicationContext();
+                application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
 
-            Application application = (Application) context.getApplicationContext();
-            application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
+                taskQueueManager.onInitialized();
+            });
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
     }
+
 
     // TODO: (Deprecated) FlareLane 클래스 내 코드로 아이콘 변경할 수 없도록 할 예정 (기본 리소스 이름을 인식하게 하거나, Notification 의 변수 값으로 동적 할당 예정)
     public static void setNotificationIcon(int notificationIcon) {
@@ -123,27 +108,166 @@ public class FlareLane {
     }
 
     public static void setUserId(Context context, String userId) {
-        afterInit(() -> {
-            try {
-                JSONObject data = new JSONObject();
-                data.put("userId", userId == null ? JSONObject.NULL : userId);
+        taskQueueManager.addTask(new NamedRunnable("setUserId") {
+            @Override
+            public void run() {
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("userId", userId == null ? JSONObject.NULL : userId);
 
-                com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
-                    @Override
-                    public void onSuccess(com.flarelane.Device device) {
-                        BaseSharedPreferences.setUserId(context, device.userId);
-                    }
-                });
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
+                    com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
+                        @Override
+                        public void onSuccess(com.flarelane.Device device) {
+                            BaseSharedPreferences.setUserId(context, device.userId);
+                            completeTask();
+                        }
+                    });
+                } catch (Exception e) {
+                    com.flarelane.BaseErrorHandler.handle(e);
+                }
+            }
+        });
+    }
+
+    public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
+        taskQueueManager.addTask(new NamedRunnable("subscribe") {
+             @Override
+             public void run() {
+                 try {
+                     IsSubscribedHandler handlerWithCompleteTask = new IsSubscribedHandler() {
+                         @Override
+                         public void onSuccess(boolean isSubscribed) {
+                             if (handler != null)
+                                 handler.onSuccess(isSubscribed);
+
+                             completeTask();
+                         }
+                     };
+
+
+                     PermissionActivity.isSubscribedHandler = handlerWithCompleteTask;
+
+                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                             !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
+                         Application application = (Application) context.getApplicationContext();
+                         int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
+
+                         // If targetSdkVersion < Build.VERSION_CODES.TIRAMISU, must go to settings.
+                         if (targetSdkVersion < Build.VERSION_CODES.TIRAMISU ||
+                                 (fallbackToSettings && BaseSharedPreferences.getAlreadyPermissionAsked(context))) {
+                             new Thread(new Runnable() {
+                                 @Override
+                                 public void run() {
+                                     Intent intent = new Intent();
+                                     intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
+                                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                     intent.putExtra("android.provider.extra.APP_PACKAGE", context.getPackageName());
+                                     context.startActivity(intent);
+                                 }
+                             }).start();
+                         } else {
+                             requestPermissionForNotifications(context, handlerWithCompleteTask);
+                         }
+                     } else {
+                         subscribeWithPushToken(context, handlerWithCompleteTask);
+                     }
+                 } catch (Exception e) {
+                     com.flarelane.BaseErrorHandler.handle(e);
+                 }
+             }
+         });
+    }
+
+    public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
+        taskQueueManager.addTask(new NamedRunnable("unsubscribe") {
+             @Override
+             public void run() {
+                 try {
+                     JSONObject data = new JSONObject();
+                     data.put("isSubscribed", false);
+
+                     DeviceService.update(context, data, new DeviceService.ResponseHandler() {
+                         @Override
+                         public void onSuccess(Device device) {
+                             if (handler != null) {
+                                 mainHandler.post(new Runnable() {
+                                     @Override
+                                     public void run() {
+                                         handler.onSuccess(device.isSubscribed);
+                                     }
+                                 });
+                             }
+                             completeTask();
+                         }
+                     });
+                 } catch (Exception e) {
+                     com.flarelane.BaseErrorHandler.handle(e);
+                 }
+             }
+         });
+    }
+
+    public static void trackEvent(Context context, String type, JSONObject data) {
+        taskQueueManager.addTask(new NamedRunnable("trackEvent") {
+            @Override
+            public void run() {
+                try {
+                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+                    String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
+
+                    com.flarelane.EventService.trackEvent(projectId, deviceId, userId, type, data);
+                    completeTask();
+                } catch (Exception e) {
+                    com.flarelane.BaseErrorHandler.handle(e);
+                }
+            }
+        });
+    }
+
+    public static void setTags(Context context, JSONObject tags) {
+        taskQueueManager.addTask(new NamedRunnable("setTags") {
+            @Override
+            public void run() {
+                try {
+                    JSONObject data = new JSONObject();
+                    data.put("tags", tags);
+
+                    com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
+                        @Override
+                        public void onSuccess(com.flarelane.Device device) {
+                            completeTask();
+                        }
+                    });
+                } catch (Exception e) {
+                    com.flarelane.BaseErrorHandler.handle(e);
+                }
+            }
+        });
+    }
+
+    public static void displayInApp(Context context, String group) {
+        taskQueueManager.addTask(new NamedRunnable("displayInApp") {
+            @Override
+            public void run() {
+                try {
+                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+                    InAppService.getMessage(projectId, deviceId, group, modelInAppMessage -> {
+                        FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
+                        completeTask();
+                        return null;
+                    });
+                } catch (Exception e) {
+                    com.flarelane.BaseErrorHandler.handle(e);
+                }
             }
         });
     }
 
     public static String getDeviceId(Context context) {
         try {
-            String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-            return deviceId;
+            return BaseSharedPreferences.getDeviceId(context, false);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -153,8 +277,7 @@ public class FlareLane {
 
     public static String getUserId(Context context) {
         try {
-            String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
-            return userId;
+            return BaseSharedPreferences.getUserId(context, true);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -164,8 +287,7 @@ public class FlareLane {
 
     public static String getProjectId(Context context) {
         try {
-            String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-            return projectId;
+            return BaseSharedPreferences.getProjectId(context, false);
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -184,112 +306,6 @@ public class FlareLane {
             com.flarelane.BaseErrorHandler.handle(e);
         }
         return false;
-    }
-
-    public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
-        afterInit(() -> {
-            try {
-                PermissionActivity.isSubscribedHandler = handler;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
-                    Application application = (Application) context.getApplicationContext();
-                    int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
-
-                    // If targetSdkVersion < Build.VERSION_CODES.TIRAMISU, must go to settings.
-                    if (targetSdkVersion < Build.VERSION_CODES.TIRAMISU ||
-                            (fallbackToSettings && BaseSharedPreferences.getAlreadyPermissionAsked(context))) {
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                Intent intent = new Intent();
-                                intent.setAction("android.settings.APP_NOTIFICATION_SETTINGS");
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                intent.putExtra("android.provider.extra.APP_PACKAGE", context.getPackageName());
-                                context.startActivity(intent);
-                            }
-                        }).start();
-                    } else {
-                        requestPermissionForNotifications(context, handler);
-                    }
-                } else {
-                    subscribeWithPushToken(context, handler);
-                }
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        });
-    }
-
-    public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
-        afterInit(() -> {
-            try {
-                JSONObject data = new JSONObject();
-                data.put("isSubscribed", false);
-
-                DeviceService.update(context, data, new DeviceService.ResponseHandler() {
-                    @Override
-                    public void onSuccess(Device device) {
-                        if (handler != null) {
-                            mainHandler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    handler.onSuccess(device.isSubscribed);
-                                }
-                            });
-                        }
-                    }
-                });
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        });
-    }
-
-    public static void trackEvent(Context context, String type, JSONObject data) {
-        afterInit(() -> {
-            try {
-                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
-
-                com.flarelane.EventService.trackEvent(projectId, deviceId, userId, type, data);
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        });
-    }
-
-    public static void setTags(Context context, JSONObject tags) {
-        afterInit(() -> {
-            try {
-                JSONObject data = new JSONObject();
-                data.put("tags", tags);
-
-                com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
-                    @Override
-                    public void onSuccess(com.flarelane.Device device) {
-                    }
-                });
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        });
-    }
-
-    public static void displayInApp(Context context, String group) {
-        afterInit(() -> {
-            try {
-                String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-                String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                InAppService.getMessage(projectId, deviceId, group, modelInAppMessage -> {
-                    FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
-                    return null;
-                });
-            } catch (Exception e) {
-                com.flarelane.BaseErrorHandler.handle(e);
-            }
-        });
     }
 
     protected static void requestPermissionForNotifications(Context context, @Nullable IsSubscribedHandler handler) {
@@ -314,7 +330,10 @@ public class FlareLane {
             if (projectId == null || projectId.trim().isEmpty()) return;
 
             // Execute only once.
-            if (!Helper.appInForeground(context) || isActivated) return;
+            if (!Helper.appInForeground(context) || isActivated) {
+                if (callback != null) callback.run();
+                return;
+            }
             isActivated = true;
 
             String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
