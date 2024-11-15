@@ -8,6 +8,7 @@ import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 import org.json.JSONObject
 import java.util.Date
+import kotlin.math.absoluteValue
 
 @Parcelize
 data class Notification(
@@ -66,9 +67,9 @@ data class Notification(
         val notificationId = dataJsonObject?.optString(Constants.NOTIFICATION_ID)
 
         return if (notificationId != null && !notificationId.contentEquals("")) {
-            notificationId.toInt()
+            notificationId.hashCode().absoluteValue
         } else {
-            Date().time.toInt()
+            id.hashCode().absoluteValue
         }
     }
 
