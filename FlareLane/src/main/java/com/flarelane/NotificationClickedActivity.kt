@@ -54,7 +54,7 @@ internal class NotificationClickedActivity : Activity() {
 
                 IntentUtil.createIntentIfResolveActivity(this, url)?.let {
                     try {
-                        it.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         startActivity(it)
                     } catch (_: Exception) {
                         Logger.verbose("Url is not available. url=${notification.url}")
