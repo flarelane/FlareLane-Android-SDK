@@ -118,8 +118,7 @@ internal class FlareLaneInAppWebViewActivity : Activity(),
             Uri.parse(url)?.let {
                 IntentUtil.createIntentIfResolveActivity(this, it)?.let { intent ->
                     try {
-                        intent.flags =
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         startActivity(intent)
                     } catch (_: Exception) {
                         // 외부 앱을 실행할 수 없음
