@@ -16,11 +16,12 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 class DeviceService {
-    static JSONObject getSystemInfo() throws Exception {
+    static JSONObject getSystemInfo(Context context) throws Exception {
         JSONObject data = new JSONObject();
         data.put("platform", Constants.SDK_PLATFORM);
         data.put("deviceModel", Build.MODEL);
         data.put("osVersion", String.valueOf(Build.VERSION.RELEASE));
+        data.put("appVersion", Helper.getValidSemVerAppVersion(context));
         data.put("sdkVersion", FlareLane.SdkInfo.version);
         data.put("timeZone", TimeZone.getDefault().getID());
         data.put("languageCode", Locale.getDefault().getLanguage());
@@ -32,7 +33,7 @@ class DeviceService {
 
     static void register(Context context, String projectId, @Nullable ResponseHandler responseHandler) {
         try {
-            JSONObject data = getSystemInfo();
+            JSONObject data = getSystemInfo(context);
             DeviceService.create(projectId, data, new ResponseHandler() {
                 @Override
                 public void onSuccess(Device device) {
@@ -50,7 +51,7 @@ class DeviceService {
 
     static void activate(Context context, @Nullable ResponseHandler responseHandler) {
         try {
-            JSONObject data = getSystemInfo();
+            JSONObject data = getSystemInfo(context);
             data.put("lastActiveAt", Utils.getISO8601DateString());
 
             DeviceService.update(context, data, new ResponseHandler() {
