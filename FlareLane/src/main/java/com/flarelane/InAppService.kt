@@ -8,16 +8,21 @@ internal object InAppService {
     var isDisplaying = false
 
     @JvmStatic
-    fun getMessage(projectId: String, deviceId: String, group: String, callback: (ModelInAppMessage?) -> Unit) {
+    fun getMessage(projectId: String, deviceId: String, group: String, data: JSONObject, callback: (ModelInAppMessage?) -> Unit) {
         if (isDisplaying) {
             Logger.verbose("IAM is already displaying.")
             return
         }
         isDisplaying = true
 
+        val body = JSONObject()
+            .put("group", group)
+            .put("data", data)
+
+
         HTTPClient.post(
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages?group=$group",
-            null,
+            body,
             object : ResponseHandler() {
                 override fun onSuccess(responseCode: Int, response: JSONObject) {
                     try {

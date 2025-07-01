@@ -130,7 +130,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btn_in_app_message).setOnClickListener {
-            FlareLane.displayInApp(this, "home")
+            val data = JSONObject()
+            data.put("d1", 27)
+            data.put("d2", "men")
+            data.put("d3", JSONObject.NULL)
+
+            FlareLane.displayInApp(this, "home", data)
         }
 
         FlareLane.displayInApp(this, "home");

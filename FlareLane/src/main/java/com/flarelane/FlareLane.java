@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.8.3";
+        public static String version = "1.8.4";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -247,13 +247,19 @@ public class FlareLane {
     }
 
     public static void displayInApp(Context context, String group) {
+        displayInApp(context, group, null);
+    }
+
+    public static void displayInApp(Context context, String group, JSONObject data) {
+        JSONObject ensureData = data != null ? data : new JSONObject();
+
         taskQueueManager.addTask(new NamedRunnable("displayInApp") {
             @Override
             public void run() {
                 try {
                     String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
                     String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                    InAppService.getMessage(projectId, deviceId, group, modelInAppMessage -> {
+                    InAppService.getMessage(projectId, deviceId, group, ensureData, modelInAppMessage -> {
                         FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
                         completeTask();
                         return null;
