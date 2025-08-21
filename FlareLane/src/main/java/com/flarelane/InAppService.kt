@@ -36,6 +36,7 @@ internal object InAppService {
                             )
                             callback.invoke(model)
                         } else {
+                            callback.invoke(null)
                             Logger.verbose("There is no displayable IAM")
                         }
                     } catch (e: Exception) {
