@@ -321,6 +321,26 @@ public class FlareLane {
         return false;
     }
 
+    public static void resetDevice(Context context) {
+        try {
+            com.flarelane.Logger.verbose("resetDevice: Clearing all cached device data");
+
+            // Clear all cached device data
+            com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
+            com.flarelane.BaseSharedPreferences.setUserId(context, null);
+            com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
+            com.flarelane.BaseSharedPreferences.setPushToken(context, null);
+            com.flarelane.BaseSharedPreferences.setAlreadyPermissionAsked(context, false);
+
+            // Reset activation state to allow re-initialization
+            isActivated = false;
+
+            com.flarelane.Logger.verbose("resetDevice: Device data cleared successfully");
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+    }
+
     protected static void requestPermissionForNotifications(Context context, @Nullable IsSubscribedHandler handler) {
         Application application = (Application) context.getApplicationContext();
         int targetSdkVersion = application.getApplicationInfo().targetSdkVersion;
