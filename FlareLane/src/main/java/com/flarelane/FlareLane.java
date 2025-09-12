@@ -335,7 +335,10 @@ public class FlareLane {
             // Reset activation state to allow re-initialization
             isActivated = false;
 
-            com.flarelane.Logger.verbose("resetDevice: Device data cleared successfully");
+            // Reset task queue state
+            taskQueueManager.reset();
+
+            com.flarelane.Logger.verbose("resetDevice: Device data and task queue cleared successfully");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
