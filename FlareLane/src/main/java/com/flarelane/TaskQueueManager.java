@@ -101,4 +101,24 @@ class TaskQueueManager {
             processNext();
         }
     }
+
+    // Reset the task queue state and clear all pending tasks
+    public synchronized void reset() {
+        Logger.verbose("Resetting task queue state");
+
+        // Clear all pending tasks
+        taskQueue.clear();
+
+        // Reset processing state
+        isProcessing = false;
+        isInitialized = false;
+
+        // Cancel any pending timeout
+        if (timeoutRunnable != null) {
+            handler.removeCallbacks(timeoutRunnable);
+            timeoutRunnable = null;
+        }
+
+        Logger.verbose("Task queue reset completed");
+    }
 }
