@@ -325,9 +325,6 @@ public class FlareLane {
         try {
             com.flarelane.Logger.verbose("resetDevice: Clearing all cached device data");
 
-            FlareLane.unsubscribe(context, null);
-            FlareLane.setUserId(context, null);
-
             taskQueueManager.addTask(new NamedRunnable("trackEvent") {
                 @Override
                 public void run() {
