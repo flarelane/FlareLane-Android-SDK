@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.8.4";
+        public static String version = "1.8.5";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -38,6 +38,7 @@ public class FlareLane {
 
     private static final com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
     private static final TaskQueueManager taskQueueManager = TaskQueueManager.getInstance();
+    private static final Throttler inAppMessageThrottler = new Throttler(500); // 0.5 seconds in milliseconds
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
@@ -253,21 +254,27 @@ public class FlareLane {
     public static void displayInApp(Context context, String group, JSONObject data) {
         JSONObject ensureData = data != null ? data : new JSONObject();
 
-        taskQueueManager.addTask(new NamedRunnable("displayInApp") {
-            @Override
-            public void run() {
-                try {
-                    String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
-                    String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                    InAppService.getMessage(projectId, deviceId, group, ensureData, modelInAppMessage -> {
-                        FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
-                        completeTask();
-                        return null;
-                    });
-                } catch (Exception e) {
-                    com.flarelane.BaseErrorHandler.handle(e);
+        inAppMessageThrottler.throttle(() -> {
+            taskQueueManager.addTask(new NamedRunnable("displayInApp") {
+                @Override
+                public void run() {
+                    try {
+                        String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+                        String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+                        InAppService.getMessage(projectId, deviceId, group, ensureData, modelInAppMessage -> {
+                            if (modelInAppMessage != null) {
+                                FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
+                            }
+
+                            completeTask();
+                            return null;
+                        });
+                    } catch (Exception e) {
+                        com.flarelane.BaseErrorHandler.handle(e);
+                    }
                 }
-            }
+            });
+            return null;
         });
     }
 
@@ -312,6 +319,30 @@ public class FlareLane {
             com.flarelane.BaseErrorHandler.handle(e);
         }
         return false;
+    }
+
+    public static void resetDevice(Context context) {
+        try {
+            com.flarelane.Logger.verbose("resetDevice: Clearing all cached device data");
+
+            // Clear all cached device data
+            com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
+            com.flarelane.BaseSharedPreferences.setUserId(context, null);
+            com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
+            com.flarelane.BaseSharedPreferences.setPushToken(context, null);
+            com.flarelane.BaseSharedPreferences.setAlreadyPermissionAsked(context, false);
+            com.flarelane.BaseSharedPreferences.setProjectId(context, null);
+
+            // Reset activation state to allow re-initialization
+            isActivated = false;
+
+            // Reset task queue state
+            taskQueueManager.reset();
+
+            com.flarelane.Logger.verbose("resetDevice: Device data and task queue cleared successfully");
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
     }
 
     protected static void requestPermissionForNotifications(Context context, @Nullable IsSubscribedHandler handler) {

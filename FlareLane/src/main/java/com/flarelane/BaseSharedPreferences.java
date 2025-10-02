@@ -45,7 +45,12 @@ class BaseSharedPreferences {
 
     public static boolean setProjectId(Context context, String projectId) {
         android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
-        editor.putString(PROJECT_ID_KEY, projectId);
+        if (projectId == null) {
+            editor.remove(PROJECT_ID_KEY);
+        } else {
+            editor.putString(PROJECT_ID_KEY, projectId);
+        }
+
         return editor.commit();
     }
 
@@ -57,7 +62,12 @@ class BaseSharedPreferences {
 
     public static boolean setPushToken(Context context, String pushToken) {
         android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
-        editor.putString(PUSH_TOKEN_KEY, pushToken);
+        if (pushToken == null) {
+            editor.remove(PUSH_TOKEN_KEY);
+        } else {
+            editor.putString(PUSH_TOKEN_KEY, pushToken);
+        }
+
         return editor.commit();
     }
 
