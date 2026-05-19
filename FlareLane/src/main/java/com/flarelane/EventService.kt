@@ -8,6 +8,36 @@ internal object EventService {
     @JvmField
     var unhandledClickedNotification: Notification? = null
 
+    private const val CLICK_DEDUP_TTL_MS = 60_000L
+    private const val CLICK_DEDUP_MAX_SIZE = 256
+    private val processedClickIds = LinkedHashMap<String, Long>()
+
+    @Synchronized
+    private fun shouldSkipDuplicateClick(notificationId: String): Boolean {
+        val now = System.currentTimeMillis()
+        val iterator = processedClickIds.entries.iterator()
+        while (iterator.hasNext()) {
+            if (now - iterator.next().value > CLICK_DEDUP_TTL_MS) {
+                iterator.remove()
+            } else {
+                break
+            }
+        }
+        if (processedClickIds.containsKey(notificationId)) {
+            Logger.verbose("Duplicate notification click prevented: $notificationId")
+            return true
+        }
+        processedClickIds[notificationId] = now
+        if (processedClickIds.size > CLICK_DEDUP_MAX_SIZE) {
+            val oldest = processedClickIds.entries.iterator()
+            if (oldest.hasNext()) {
+                oldest.next()
+                oldest.remove()
+            }
+        }
+        return false
+    }
+
     @Throws(Exception::class)
     fun createNotificationClicked(
         projectId: String,
@@ -15,6 +45,10 @@ internal object EventService {
         notification: Notification,
         userId: String?
     ) {
+        if (shouldSkipDuplicateClick(notification.id)) {
+            return
+        }
+
         create(projectId, deviceId, notification.id, EventType.Clicked, userId)
 
         if (FlareLane.notificationClickedHandler != null) {
