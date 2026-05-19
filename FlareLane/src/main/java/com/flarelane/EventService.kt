@@ -1,6 +1,7 @@
 package com.flarelane
 
 import android.content.Context
+import android.os.SystemClock
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -14,7 +15,7 @@ internal object EventService {
 
     @Synchronized
     private fun shouldSkipDuplicateClick(notificationId: String): Boolean {
-        val now = System.currentTimeMillis()
+        val now = SystemClock.elapsedRealtime()
         val iterator = processedClickIds.entries.iterator()
         while (iterator.hasNext()) {
             if (now - iterator.next().value > CLICK_DEDUP_TTL_MS) {
