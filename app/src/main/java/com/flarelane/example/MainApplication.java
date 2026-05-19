@@ -16,7 +16,7 @@ import com.flarelane.NotificationReceivedEvent;
 import org.json.JSONObject;
 
 public class MainApplication extends Application {
-    private static final String FLARELANE_PROJECT_ID = "FLARELANE_PROJECT_ID";
+    private static final String FLARELANE_PROJECT_ID = "e6ffd9f9-c55d-40f1-a8ec-f9f49bc5ce76";
 
     @Override
     public void onCreate() {
