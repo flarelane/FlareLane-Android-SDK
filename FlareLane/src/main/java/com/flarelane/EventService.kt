@@ -15,25 +15,32 @@ internal object EventService {
         notification: Notification,
         userId: String?
     ) {
-        val data = JSONObject()
-        val button = notification.clickedButton
-        if (button != null) {
-            data.put("isButton", true)
-            data.put("buttonIndex", notification.clickedButtonIdx)
-            data.put("buttonLabel", button.label)
-        }
-        val url = notification.clickedUrl
-        if (!url.isNullOrEmpty()) {
-            data.put("url", url)
-        }
-
-        create(projectId, deviceId, notification.id, EventType.Clicked, userId, data)
-
-        if (FlareLane.notificationClickedHandler != null) {
-            FlareLane.notificationClickedHandler.onClicked(notification)
-        } else {
-            unhandledClickedNotification = notification
-        }
+        sendDedupEvent(
+            eventType = EventType.Clicked,
+            projectId = projectId,
+            deviceId = deviceId,
+            notification = notification,
+            userId = userId,
+            dataBuilder = {
+                JSONObject().apply {
+                    val button = notification.clickedButton
+                    if (button != null) {
+                        put("isButton", true)
+                        put("buttonIndex", notification.clickedButtonIdx)
+                        put("buttonLabel", button.label)
+                    }
+                    val url = notification.clickedUrl
+                    if (!url.isNullOrEmpty()) put("url", url)
+                }
+            },
+            afterEmit = {
+                if (FlareLane.notificationClickedHandler != null) {
+                    FlareLane.notificationClickedHandler.onClicked(notification)
+                } else {
+                    unhandledClickedNotification = notification
+                }
+            }
+        )
     }
 
     @Throws(Exception::class)
@@ -54,13 +61,35 @@ internal object EventService {
     @JvmStatic
     @Throws(Exception::class)
     fun createBackgroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
-        create(projectId, deviceId, notification.id, EventType.BackgroundReceived, userId)
+        sendDedupEvent(EventType.BackgroundReceived, projectId, deviceId, notification, userId)
     }
 
     @JvmStatic
     @Throws(Exception::class)
     fun createForegroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
-        create(projectId, deviceId, notification.id, EventType.ForegroundReceived, userId)
+        sendDedupEvent(EventType.ForegroundReceived, projectId, deviceId, notification, userId)
+    }
+
+    /**
+     * Single entry point for all SDK-auto events. Runs dedup, builds optional event data, sends
+     * the server event, and finally invokes the optional `afterEmit` block (e.g. notifying the
+     * click handler). All steps are skipped on duplicate.
+     */
+    private fun sendDedupEvent(
+        eventType: String,
+        projectId: String,
+        deviceId: String,
+        notification: Notification,
+        userId: String?,
+        dataBuilder: (() -> JSONObject)? = null,
+        afterEmit: (() -> Unit)? = null
+    ) {
+        if (EventDeduplicator.markAndCheckDuplicate(eventType, notification.id)) {
+            Logger.verbose("Duplicate $eventType prevented: ${notification.id}")
+            return
+        }
+        create(projectId, deviceId, notification.id, eventType, userId, dataBuilder?.invoke())
+        afterEmit?.invoke()
     }
 
     @Throws(Exception::class)
