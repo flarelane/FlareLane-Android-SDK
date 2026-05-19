@@ -15,7 +15,19 @@ internal object EventService {
         notification: Notification,
         userId: String?
     ) {
-        create(projectId, deviceId, notification.id, EventType.Clicked, userId)
+        val data = JSONObject()
+        val button = notification.clickedButton
+        if (button != null) {
+            data.put("isButton", true)
+            data.put("buttonIndex", notification.clickedButtonIdx)
+            data.put("buttonLabel", button.label)
+        }
+        val url = notification.clickedUrl
+        if (!url.isNullOrEmpty()) {
+            data.put("url", url)
+        }
+
+        create(projectId, deviceId, notification.id, EventType.Clicked, userId, data)
 
         if (FlareLane.notificationClickedHandler != null) {
             FlareLane.notificationClickedHandler.onClicked(notification)
@@ -52,7 +64,14 @@ internal object EventService {
     }
 
     @Throws(Exception::class)
-    private fun create(projectId: String, deviceId: String, notificationId: String, type: String, userId: String?) {
+    private fun create(
+        projectId: String,
+        deviceId: String,
+        notificationId: String,
+        type: String,
+        userId: String?,
+        data: JSONObject? = null
+    ) {
         val body = JSONObject()
         body.put("notificationId", notificationId)
         body.put("deviceId", deviceId)
@@ -62,6 +81,10 @@ internal object EventService {
 
         if (userId != null) {
             body.put("userId", userId)
+        }
+
+        if (data != null && data.length() > 0) {
+            body.put("data", data)
         }
 
         HTTPClient.post(

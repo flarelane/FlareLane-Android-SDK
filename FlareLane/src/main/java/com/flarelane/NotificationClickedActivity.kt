@@ -23,7 +23,10 @@ internal class NotificationClickedActivity : Activity() {
             val userId = BaseSharedPreferences.getUserId(this.applicationContext, true)
 
             EventService.createNotificationClicked(projectId, deviceId, notification, userId)
-            handleNotificationClicked(notification)
+            handleClickedUrl(notification)
+            if (notification.clickedButtonIdx != null) {
+                dismissNotification(notification)
+            }
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
         } finally {
@@ -31,38 +34,50 @@ internal class NotificationClickedActivity : Activity() {
         }
     }
 
-    private fun handleNotificationClicked(notification: Notification) {
-        if (notification.url.isNullOrEmpty()) {
+    private fun handleClickedUrl(notification: Notification) {
+        val targetUrl = notification.clickedUrl
+        if (targetUrl.isNullOrEmpty()) {
             launchApp()
-        } else {
-            val isIgnoreLaunchUrl = AndroidUtils.getManifestMetaBoolean(
-                this, Constants.DISMISS_LAUNCH_URL
-            ) || notification.dataJsonObject?.optString(Constants.DISMISS_LAUNCH_URL) == "true"
-            if (isIgnoreLaunchUrl) {
-                Logger.verbose("Works natively without automatic URL processing")
+            return
+        }
+
+        val isIgnoreLaunchUrl = AndroidUtils.getManifestMetaBoolean(
+            this, Constants.DISMISS_LAUNCH_URL
+        ) || notification.dataJsonObject?.optString(Constants.DISMISS_LAUNCH_URL) == "true"
+        if (isIgnoreLaunchUrl) {
+            Logger.verbose("Works natively without automatic URL processing")
+            launchApp()
+            return
+        }
+
+        try {
+            val url = Uri.parse(targetUrl)
+            if (url.scheme == null) {
+                Logger.verbose("Url scheme is null. url=$targetUrl")
                 launchApp()
                 return
             }
 
-            try {
-                val url = Uri.parse(notification.url)
-                if (url.scheme == null) {
-                    Logger.verbose("Url scheme is null. url=${notification.url}")
+            IntentUtil.createIntentIfResolveActivity(this, url)?.let {
+                try {
+                    it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    startActivity(it)
+                } catch (_: Exception) {
+                    Logger.verbose("Url is not available. url=$targetUrl")
                     launchApp()
-                    return
                 }
+            } ?: FlareLaneWebViewActivity.show(this, targetUrl)
+        } catch (_: Exception) {
+        }
+    }
 
-                IntentUtil.createIntentIfResolveActivity(this, url)?.let {
-                    try {
-                        it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        startActivity(it)
-                    } catch (_: Exception) {
-                        Logger.verbose("Url is not available. url=${notification.url}")
-                        launchApp()
-                    }
-                } ?: FlareLaneWebViewActivity.show(this, notification.url)
-            } catch (_: Exception) {
-            }
+    private fun dismissNotification(notification: Notification) {
+        try {
+            val notificationManager =
+                getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+            notificationManager.cancel(notification.currentAndroidNotificationId())
+        } catch (e: Exception) {
+            BaseErrorHandler.handle(e)
         }
     }
 

@@ -49,11 +49,9 @@ public class NotificationReceivedEvent {
                 @Override
                 public void run() {
                     try {
-                        Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
+                        int baseRequestCode = new Random().nextInt(543254);
 
-                        PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
+                        PendingIntent contentIntent = buildClickedPendingIntent(context, flarelaneNotification, baseRequestCode);
 
                         int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
 
@@ -98,6 +96,14 @@ public class NotificationReceivedEvent {
                             builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
                         }
 
+                        java.util.List<NotificationButton> buttons = flarelaneNotification.getButtonList();
+                        for (int i = 0; i < buttons.size(); i++) {
+                            NotificationButton button = buttons.get(i);
+                            PendingIntent buttonPendingIntent = buildClickedPendingIntent(
+                                    context, flarelaneNotification.withClickedButtonIdx(i), baseRequestCode + i + 1);
+                            builder.addAction(0, button.label, buttonPendingIntent);
+                        }
+
                         android.app.Notification notification = builder.build();
 
                         notification.defaults |= android.app.Notification.DEFAULT_SOUND;
@@ -121,6 +127,18 @@ public class NotificationReceivedEvent {
             com.flarelane.BaseErrorHandler.handle(e);
         }
 
+    }
+
+    private static PendingIntent buildClickedPendingIntent(Context context, Notification notification, int requestCode) {
+        Intent intent = new Intent(context, NotificationClickedActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        ExtensionsKt.putParcelableDataClass(intent, notification);
+        return PendingIntent.getActivity(
+                context,
+                requestCode,
+                intent,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
+        );
     }
 
     @SuppressLint("DiscouragedApi")
