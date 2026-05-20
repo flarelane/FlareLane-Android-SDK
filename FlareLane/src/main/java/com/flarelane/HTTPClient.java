@@ -13,16 +13,17 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Collections;
 
 // REF: https://pythonq.com/so/java/491072
 // REF: https://www.tutorialspoint.com/android/android_json_parser.htm/a/p
 class HTTPClient {
     protected static class ResponseHandler {
         void onSuccess(int responseCode, JSONObject response) {
-            com.flarelane.Logger.verbose("HTTPClient.ResponseHandler.onSuccess: " + response.toString());
+            com.flarelane.Logger.verbose("HTTP", "response success", Collections.singletonMap("response", response));
         }
         void onFailure(int responseCode, JSONObject response) {
-            com.flarelane.Logger.error("HTTPClient.ResponseHandler.onFailure: " + response.toString());
+            com.flarelane.Logger.error("HTTP", "response failure", Collections.singletonMap("response", response));
         }
     }
 
@@ -93,7 +94,7 @@ class HTTPClient {
 
                         OutputStream outputStream = conn.getOutputStream();
                         outputStream.write(sendBytes);
-                        com.flarelane.Logger.verbose("HTTP " + method + " body: " + body.toString());
+                        com.flarelane.Logger.verbose("HTTP", method + " " + path, Collections.singletonMap("body", body));
                     }
 
                     handleResponse(conn, responseHandler);

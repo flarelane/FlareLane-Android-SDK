@@ -10,6 +10,7 @@ import androidx.legacy.content.WakefulBroadcastReceiver;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
@@ -29,7 +30,7 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
 
     private void showNotification(Context context, Intent intent) throws Exception {
         if (intent == null || intent.getExtras() == null) {
-            Logger.error("intent is NULL");
+            Logger.error("Notification", "intent is null");
             return;
         }
 
@@ -37,28 +38,28 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
 
         String isFlareLane = jsonObject.optString("isFlareLane");
         if (!isFlareLane.contentEquals("true")) {
-            Logger.verbose("It is not a message of FlareLane");
+            Logger.verbose("Notification", "not a FlareLane message");
             return;
         }
 
         Notification flarelaneNotification = new Notification(jsonObject);
-        com.flarelane.Logger.verbose("Message data payload: " + flarelaneNotification);
+        com.flarelane.Logger.verbose("Notification", "message payload received", Collections.singletonMap("notification", flarelaneNotification));
 
         boolean isForeground = Helper.appInForeground(context);
-        com.flarelane.Logger.verbose("onMessageReceived isForeground: " + isForeground);
+        com.flarelane.Logger.verbose("Notification", "onMessageReceived", Collections.singletonMap("isForeground", isForeground));
 
         JSONObject data = flarelaneNotification.getDataJsonObject();
         boolean dismissForegroundNotification = data != null &&
                 data.optString(Constants.DISMISS_FOREGROUND_NOTIFICATION).equals("true");
         if (isForeground && dismissForegroundNotification) {
-            Logger.verbose("notification dismissed cause " + Constants.DISMISS_FOREGROUND_NOTIFICATION + " is true.");
+            Logger.info("Notification", "dismissed by dismissForegroundNotification flag", Collections.singletonMap("flag", Constants.DISMISS_FOREGROUND_NOTIFICATION));
             return;
         }
 
         NotificationReceivedEvent event = new NotificationReceivedEvent(context.getApplicationContext(), flarelaneNotification);
 
         if (isForeground && FlareLane.notificationForegroundReceivedHandler != null) {
-            Logger.verbose("notificationForegroundReceivedHandler exists, you can control the display timing.");
+            Logger.info("Notification", "foreground received handler will control display timing");
             FlareLane.notificationForegroundReceivedHandler.onWillDisplay(event);
             return;
         }
@@ -74,7 +75,7 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
             try {
                 json.put(key, bundle.get(key));
             } catch (JSONException e) {
-                Logger.error(Log.getStackTraceString(e));
+                Logger.error("Notification", "bundle to json failed", Collections.singletonMap("stackTrace", Log.getStackTraceString(e)));
             }
         }
 

@@ -12,6 +12,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -38,7 +39,7 @@ class DeviceService {
                 @Override
                 public void onSuccess(Device device) {
                     BaseSharedPreferences.setDeviceId(context, device.id);
-                    Logger.verbose("deviceId : " + device.id);
+                    Logger.info("Device", "registered", Collections.singletonMap("deviceId", device.id));
 
                     if (responseHandler != null)
                         responseHandler.onSuccess(device);

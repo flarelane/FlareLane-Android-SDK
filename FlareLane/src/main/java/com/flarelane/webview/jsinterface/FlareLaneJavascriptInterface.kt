@@ -24,7 +24,7 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
         val jsonString = JSONObject(data).toString()
         var script = "FlareLane.syncDeviceDataCallback($jsonString)"
 
-        Logger.verbose("executed syncDeviceData from webView: $script")
+        Logger.verbose("IAM", "syncDeviceData executed from webView", mapOf("script" to script))
 
         webView.post {
             webView.evaluateJavascript(script, null)

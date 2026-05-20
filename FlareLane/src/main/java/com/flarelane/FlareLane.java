@@ -19,6 +19,8 @@ import com.google.android.gms.tasks.Task;
 
 import org.json.JSONObject;
 
+import java.util.Collections;
+
 
 public class FlareLane {
     public static class SdkInfo {
@@ -43,7 +45,7 @@ public class FlareLane {
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
             FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
-            com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
+            com.flarelane.Logger.info("Init", "FlareLane initialized", Collections.singletonMap("projectId", projectId));
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
             // If projectId is null or different, reset savedDeviceId to null
@@ -88,7 +90,7 @@ public class FlareLane {
                 EventService.unhandledClickedNotification = null;
             }
 
-            Logger.verbose("NotificationClickedHandler has been registered.");
+            Logger.info("Notification", "click handler registered");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -96,13 +98,13 @@ public class FlareLane {
 
     public static void setInAppMessageActionHandler(com.flarelane.InAppMessageActionHandler handler) {
         FlareLane.inAppMessageActionHandler = handler;
-        Logger.verbose("InAppMessageActionHandler has been registered.");
+        Logger.info("IAM", "action handler registered");
     }
 
     public static void setNotificationForegroundReceivedHandler(com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler) {
         try {
             FlareLane.notificationForegroundReceivedHandler = notificationForegroundReceivedHandler;
-            Logger.verbose("NotificationForegroundReceivedHandler has been registered.");
+            Logger.info("Notification", "foreground received handler registered");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -323,7 +325,7 @@ public class FlareLane {
 
     public static void resetDevice(Context context) {
         try {
-            com.flarelane.Logger.verbose("resetDevice: Clearing all cached device data");
+            com.flarelane.Logger.info("Device", "reset started");
 
             // Clear all cached device data
             com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
@@ -339,7 +341,7 @@ public class FlareLane {
             // Reset task queue state
             taskQueueManager.reset();
 
-            com.flarelane.Logger.verbose("resetDevice: Device data and task queue cleared successfully");
+            com.flarelane.Logger.info("Device", "reset completed");
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -375,7 +377,7 @@ public class FlareLane {
 
             String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
             if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
-                com.flarelane.Logger.verbose("savedDeviceId is not exists, newly registered");
+                com.flarelane.Logger.info("Device", "new device registered");
                 com.flarelane.DeviceService.register(context, projectId, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
@@ -386,7 +388,7 @@ public class FlareLane {
                     }
                 });
             } else {
-                com.flarelane.Logger.verbose("savedDeviceId is exists : " + savedDeviceId);
+                com.flarelane.Logger.info("Device", "existing device activated", Collections.singletonMap("deviceId", savedDeviceId));
                 com.flarelane.DeviceService.activate(context, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
@@ -448,7 +450,7 @@ public class FlareLane {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
-                Logger.verbose("updatePushToken failed: Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU, but POST_NOTIFICATIONS is not granted!");
+                Logger.verbose("Permission", "updatePushToken skipped, POST_NOTIFICATIONS not granted");
                 return;
             }
 
@@ -457,7 +459,7 @@ public class FlareLane {
                 public void onSuccess(RemoteParams remoteParams) {
                     try {
                         if (remoteParams.fcmSenderId == null) {
-                            Logger.error("senderId is null. Please check a property of your project");
+                            Logger.error("Subscribe", "fcmSenderId is null, check project settings");
                             return;
                         }
 
@@ -467,14 +469,14 @@ public class FlareLane {
                             public void onComplete(@NonNull Task<String> task) {
                                 try {
                                     if (!task.isSuccessful()) {
-                                        Logger.error("Fetching FCM registration token failed: " + task.getException());
+                                        Logger.error("Subscribe", "fetch FCM token failed", Collections.singletonMap("exception", task.getException()));
                                         return;
                                     }
 
                                     // Get new FCM registration token
                                     String token = task.getResult();
                                     if (token == null) {
-                                        com.flarelane.Logger.error("token is null");
+                                        com.flarelane.Logger.error("Subscribe", "FCM token is null");
                                         return;
                                     }
 

@@ -12,7 +12,7 @@ internal fun String.toJSONObject(run: (JSONObject) -> Unit) {
     try {
         jsonObject = JSONObject(this)
     } catch (e: JSONException) {
-        Logger.error("toJSONObject() error, e=$e")
+        Logger.error("Util", "toJSONObject failed", mapOf("exception" to e))
     }
     jsonObject?.let {
         run.invoke(it)
@@ -24,7 +24,7 @@ internal fun String?.toJSONObjectWithNull(run: (JSONObject?) -> Unit) {
     try {
         jsonObject = this?.let { JSONObject(it) }
     } catch (e: JSONException) {
-        Logger.error("toJSONObjectWithNull() error, e=$e")
+        Logger.error("Util", "toJSONObjectWithNull failed", mapOf("exception" to e))
         return
     }
     run.invoke(jsonObject)

@@ -23,7 +23,7 @@ object AndroidUtils {
                 PackageManager.GET_META_DATA,
             ).metaData
         } catch (e: Exception) {
-            Logger.error("application info not found, $e")
+            Logger.error("Util", "application info not found", mapOf("exception" to e))
             null
         }
     }

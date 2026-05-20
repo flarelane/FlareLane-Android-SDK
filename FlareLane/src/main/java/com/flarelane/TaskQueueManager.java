@@ -3,7 +3,9 @@ package com.flarelane;
 import android.os.Handler;
 import android.os.Looper;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 class TaskQueueManager {
@@ -31,7 +33,7 @@ class TaskQueueManager {
     // Add a task to the queue. If initialized, execute it immediately.
     public synchronized void addTask(NamedRunnable task) {
         taskQueue.add(task);
-        Logger.verbose("Task added to queue: " + task.getTaskName() + ". Queue size after adding: " + taskQueue.size());
+        Logger.verbose("TaskQueue", "task added", taskKv(task.getTaskName(), taskQueue.size()));
 
         if (isInitialized && !isProcessing) {
             processNext();
@@ -42,12 +44,12 @@ class TaskQueueManager {
     private synchronized void executeTask(NamedRunnable task) {
         if (isProcessing) return;
         isProcessing = true;
-        Logger.verbose("Executing task: " + task.getTaskName() + ". Queue size before execution: " + taskQueue.size());
+        Logger.verbose("TaskQueue", "task executing", taskKv(task.getTaskName(), taskQueue.size()));
 
         timeoutRunnable = () -> {
             synchronized (TaskQueueManager.this) {
                 if (isProcessing) {
-                    Logger.verbose("Task timed out: " + task.getTaskName() + ". Processing next task.");
+                    Logger.verbose("TaskQueue", "task timed out", java.util.Collections.singletonMap("taskName", task.getTaskName()));
                     completeTask();
                 }
             }
@@ -62,7 +64,7 @@ class TaskQueueManager {
             try {
                 task.run();
             } catch (Exception e) {
-                Logger.error("Error executing task: " + task.getTaskName());
+                Logger.error("TaskQueue", "task execution failed", java.util.Collections.singletonMap("taskName", task.getTaskName()));
                 completeTask(); // Ensure completeTask is called even on error
             }
         }).start();
@@ -72,12 +74,12 @@ class TaskQueueManager {
     private synchronized void processNext() {
         if (taskQueue.isEmpty()) {
             isProcessing = false;
-            Logger.verbose("No more tasks in queue. Queue is empty.");
+            Logger.verbose("TaskQueue", "queue empty");
             return;
         }
 
         NamedRunnable nextTask = taskQueue.poll();
-        Logger.verbose("Processing next task: " + nextTask.getTaskName() + ". Queue size before processing: " + taskQueue.size());
+        Logger.verbose("TaskQueue", "processing next task", taskKv(nextTask.getTaskName(), taskQueue.size()));
         executeTask(nextTask);
     }
 
@@ -89,14 +91,14 @@ class TaskQueueManager {
         }
 
         isProcessing = false;
-        Logger.verbose("Task completed. Queue size after completion: " + taskQueue.size());
+        Logger.verbose("TaskQueue", "task completed", java.util.Collections.singletonMap("queueSize", taskQueue.size()));
         processNext();
     }
 
     // Mark the task queue as initialized and start processing tasks.
     public synchronized void onInitialized() {
         isInitialized = true;
-        Logger.verbose("Task queue initialized. Processing queued tasks.");
+        Logger.info("TaskQueue", "initialized");
         if (!isProcessing) {
             processNext();
         }
@@ -104,7 +106,7 @@ class TaskQueueManager {
 
     // Reset the task queue state and clear all pending tasks
     public synchronized void reset() {
-        Logger.verbose("Resetting task queue state");
+        Logger.info("TaskQueue", "reset started");
 
         // Clear all pending tasks
         taskQueue.clear();
@@ -119,6 +121,13 @@ class TaskQueueManager {
             timeoutRunnable = null;
         }
 
-        Logger.verbose("Task queue reset completed");
+        Logger.info("TaskQueue", "reset completed");
+    }
+
+    private static Map<String, Object> taskKv(String taskName, int queueSize) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("taskName", taskName);
+        map.put("queueSize", queueSize);
+        return map;
     }
 }

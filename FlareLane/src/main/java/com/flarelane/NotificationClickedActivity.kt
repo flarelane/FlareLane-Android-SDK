@@ -16,7 +16,7 @@ internal class NotificationClickedActivity : Activity() {
             val notification = intent.getParcelableDataClass(Notification::class.java) ?: run {
                 throw Exception("notification is null")
             }
-            Logger.verbose("NotificationClickedActivity notification=$notification")
+            Logger.verbose("Notification", "click activity started", mapOf("notification" to notification))
 
             val projectId = BaseSharedPreferences.getProjectId(this.applicationContext, false)
             val deviceId = BaseSharedPreferences.getDeviceId(this.applicationContext, false)
@@ -45,7 +45,7 @@ internal class NotificationClickedActivity : Activity() {
             this, Constants.DISMISS_LAUNCH_URL
         ) || notification.dataJsonObject?.optString(Constants.DISMISS_LAUNCH_URL) == "true"
         if (isIgnoreLaunchUrl) {
-            Logger.verbose("Works natively without automatic URL processing")
+            Logger.info("Notification", "automatic url processing skipped")
             launchApp()
             return
         }
@@ -53,7 +53,7 @@ internal class NotificationClickedActivity : Activity() {
         try {
             val url = Uri.parse(targetUrl)
             if (url.scheme == null) {
-                Logger.verbose("Url scheme is null. url=$targetUrl")
+                Logger.verbose("Notification", "url scheme is null", mapOf("url" to targetUrl))
                 launchApp()
                 return
             }
@@ -63,7 +63,7 @@ internal class NotificationClickedActivity : Activity() {
                     it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     startActivity(it)
                 } catch (_: Exception) {
-                    Logger.verbose("Url is not available. url=$targetUrl")
+                    Logger.verbose("Notification", "url not available", mapOf("url" to targetUrl))
                     launchApp()
                 }
             } ?: FlareLaneWebViewActivity.show(this, targetUrl)
@@ -83,7 +83,7 @@ internal class NotificationClickedActivity : Activity() {
 
     private fun launchApp() {
         if (isTaskRoot) {
-            Logger.verbose("This is last activity in the stack")
+            Logger.verbose("Notification", "last activity in stack")
             packageManager.getLaunchIntentForPackage(packageName)?.let {
                 startActivity(it)
             }

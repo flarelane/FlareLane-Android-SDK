@@ -18,7 +18,7 @@ class Throttler(private val interval: Long) {
         val distance = now.time - lastActionTime.time
 
         if (distance <= interval) {
-            Logger.verbose("Throttler exceeded.")
+            Logger.verbose("Throttler", "throttled")
             return
         }
 

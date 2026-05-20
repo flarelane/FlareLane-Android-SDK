@@ -10,7 +10,7 @@ internal object InAppService {
     @JvmStatic
     fun getMessage(projectId: String, deviceId: String, group: String, data: JSONObject, callback: (ModelInAppMessage?) -> Unit) {
         if (isDisplaying) {
-            Logger.verbose("IAM is already displaying.")
+            Logger.verbose("IAM", "already displaying")
             return
         }
         isDisplaying = true
@@ -37,7 +37,7 @@ internal object InAppService {
                             callback.invoke(model)
                         } else {
                             callback.invoke(null)
-                            Logger.verbose("There is no displayable IAM")
+                            Logger.verbose("IAM", "no displayable message")
                         }
                     } catch (e: Exception) {
                         BaseErrorHandler.handle(e)

@@ -85,7 +85,7 @@ internal object EventService {
         afterEmit: (() -> Unit)? = null
     ) {
         if (EventDeduplicator.markAndCheckDuplicate(eventType, notification.id)) {
-            Logger.verbose("Duplicate $eventType prevented: ${notification.id}")
+            Logger.verbose("Event", "duplicate prevented", mapOf("eventType" to eventType, "notificationId" to notification.id))
             return
         }
         // Guarantee afterEmit runs even if server event send throws — the user action

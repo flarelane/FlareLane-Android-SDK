@@ -4,6 +4,8 @@ import androidx.annotation.NonNull;
 
 import org.json.JSONObject;
 
+import java.util.Collections;
+
 class RemoteParamsManager {
     static RemoteParams remoteParams;
 
@@ -19,7 +21,7 @@ class RemoteParamsManager {
                 super.onSuccess(responseCode, response);
 
                 try {
-                    Logger.verbose("fetchRemoteParams Success: " + response.toString());
+                    Logger.verbose("RemoteParams", "fetch success", Collections.singletonMap("response", response));
                     JSONObject data = response.getJSONObject("data");
 
                     String fcmAppId = data.isNull("fcmAppId") ? null : data.getString("fcmAppId");
