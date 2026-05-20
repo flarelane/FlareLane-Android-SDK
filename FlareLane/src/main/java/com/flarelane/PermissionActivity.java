@@ -46,6 +46,10 @@ public class PermissionActivity extends Activity {
             case 419:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     FlareLane.subscribeWithPushToken(getApplicationContext(), isSubscribedHandler);
+                } else {
+                    // Denial path — still sync the new permission state so server-side segmentation
+                    // reflects the user's choice without waiting for the next foreground re-entry.
+                    ActivateThrottle.syncPermissionIfChanged(getApplicationContext());
                 }
         }
 

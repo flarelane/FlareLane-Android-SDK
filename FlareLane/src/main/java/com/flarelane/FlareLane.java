@@ -36,15 +36,33 @@ public class FlareLane {
     protected static int notificationIcon = 0;
     protected static boolean requestPermissionOnLaunch = false;
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
-    protected static boolean isActivated = false;
 
-    private static final com.flarelane.ActivityLifecycleManager activityLifecycleManager = new com.flarelane.ActivityLifecycleManager();
+    /**
+     * Application context cached by [initWithContext] so SDK-internal components invoked from
+     * call sites without a Context handy (e.g. EventService.injectSessionId) can still reach
+     * SharedPreferences. Always the application context — never an Activity — so no leak risk.
+     */
+    private static Context applicationContext = null;
+
+    static Context getApplicationContext() {
+        return applicationContext;
+    }
+
     private static final TaskQueueManager taskQueueManager = TaskQueueManager.getInstance();
     private static final Throttler inAppMessageThrottler = new Throttler(500); // 0.5 seconds in milliseconds
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
         try {
+            // Input validation — guard against silent breakage if the host app passes a missing
+            // or blank projectId (typo / env-var fallthrough). Without this, the projectId would
+            // be persisted as null/empty and every subsequent SDK call would silently no-op.
+            if (projectId == null || projectId.trim().isEmpty()) {
+                com.flarelane.Logger.error("Init", "projectId is null or empty — initWithContext skipped");
+                return;
+            }
+
             FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
+            applicationContext = context.getApplicationContext();
             com.flarelane.Logger.info("Init", "FlareLane initialized", Collections.singletonMap("projectId", projectId));
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
@@ -54,14 +72,24 @@ public class FlareLane {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
                 com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
                 com.flarelane.BaseSharedPreferences.setProjectId(context, projectId);
+                // New device — wipe activate/session state so first foreground triggers a fresh activate
+                com.flarelane.BaseSharedPreferences.setLastActivatedAt(context, 0L);
+                com.flarelane.SessionManager.reset(context);
             }
 
-            deviceRegisterOrActivate(context, () -> {
-                Application application = (Application) context.getApplicationContext();
-                application.registerActivityLifecycleCallbacks(activityLifecycleManager.mActivityLifecycleCallbacks);
+            ActivateThrottle.registerObserver(context);
 
+            // Gate the task queue on deviceId availability. Queued tasks (trackEvent, displayInApp,
+            // setUserId, etc.) require a deviceId; releasing the queue before the first register
+            // completes would surface as a NullValueException from getDeviceId(false). For existing
+            // devices the deviceId is already persisted so we can release immediately — the
+            // ProcessLifecycleOwner observer will handle the throttled activate.
+            String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
+            if (savedDeviceId != null && !savedDeviceId.trim().isEmpty()) {
                 taskQueueManager.onInitialized();
-            });
+            } else {
+                deviceRegisterOrActivate(context, () -> taskQueueManager.onInitialized());
+            }
         } catch (Exception e) {
             com.flarelane.BaseErrorHandler.handle(e);
         }
@@ -335,8 +363,10 @@ public class FlareLane {
             com.flarelane.BaseSharedPreferences.setAlreadyPermissionAsked(context, false);
             com.flarelane.BaseSharedPreferences.setProjectId(context, null);
 
-            // Reset activation state to allow re-initialization
-            isActivated = false;
+            // Reset activate/session throttle state — next foreground will trigger a fresh activate
+            com.flarelane.BaseSharedPreferences.setLastActivatedAt(context, 0L);
+            com.flarelane.SessionManager.reset(context);
+            ActivateThrottle.releaseInFlight();
 
             // Reset task queue state
             taskQueueManager.reset();
@@ -366,14 +396,18 @@ public class FlareLane {
     protected static void deviceRegisterOrActivate(Context context, Runnable callback) {
         try {
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
-            if (projectId == null || projectId.trim().isEmpty()) return;
-
-            // Execute only once.
-            if (!Helper.appInForeground(context) || isActivated) {
+            if (projectId == null || projectId.trim().isEmpty()) {
                 if (callback != null) callback.run();
                 return;
             }
-            isActivated = true;
+
+            // Single-flight guard: serialize concurrent activate attempts. The persistent
+            // throttle (in ActivateThrottle) is the higher-level rate limit; this lock just
+            // prevents redundant overlapping calls within one process.
+            if (!ActivateThrottle.acquireInFlight()) {
+                if (callback != null) callback.run();
+                return;
+            }
 
             String savedDeviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, true);
             if (savedDeviceId == null || savedDeviceId.trim().isEmpty()) {
@@ -381,6 +415,10 @@ public class FlareLane {
                 com.flarelane.DeviceService.register(context, projectId, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
+                        ActivateThrottle.onActivateSuccess(context);
+                        // First install — handleAppStart couldn't fire @session_start because
+                        // deviceId was null. Now that register succeeded, fire it.
+                        ActivateThrottle.fireSessionStartIfReady(context);
                         if (callback != null) callback.run();
                         if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch && Helper.appInForeground(context)) {
                             com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
@@ -392,6 +430,7 @@ public class FlareLane {
                 com.flarelane.DeviceService.activate(context, new DeviceService.ResponseHandler() {
                     @Override
                     public void onSuccess(Device device) {
+                        ActivateThrottle.onActivateSuccess(context);
                         if (callback != null) callback.run();
                         if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch && Helper.appInForeground(context)) {
                             com.flarelane.FlareLane.requestPermissionForNotifications(context, null);
@@ -400,7 +439,9 @@ public class FlareLane {
                 });
             }
         } catch (Exception e) {
+            ActivateThrottle.releaseInFlight();
             BaseErrorHandler.handle(e);
+            if (callback != null) callback.run();
         }
     }
 

@@ -4,6 +4,19 @@ import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
 
+/**
+ * Pure JSON merge for outgoing event data. Kept as a separate object (same file) so JVM unit
+ * tests can verify the "host-supplied keys win" rule without loading EventService's HTTP layer.
+ */
+internal object EventDataMerger {
+    @JvmStatic
+    fun mergeSessionMetadata(data: JSONObject, sessionId: Long, sessionForegroundMs: Long): JSONObject {
+        if (!data.has("sessionId")) data.put("sessionId", sessionId)
+        if (!data.has("sessionForegroundMs")) data.put("sessionForegroundMs", sessionForegroundMs)
+        return data
+    }
+}
+
 internal object EventService {
     @JvmField
     var unhandledClickedNotification: Notification? = null
@@ -92,10 +105,31 @@ internal object EventService {
         // (e.g. click handler) must not be dropped because of a transient network failure.
         // The dedup mark is already in place, so cross-restart retry is server-side concern.
         try {
-            create(projectId, deviceId, notification.id, eventType, userId, dataBuilder?.invoke())
+            val data = dataBuilder?.invoke() ?: JSONObject()
+            injectSessionId(data)
+            create(projectId, deviceId, notification.id, eventType, userId, data)
         } finally {
             afterEmit?.invoke()
         }
+    }
+
+    /**
+     * Attach session metadata (sessionId + cumulative foreground time) to outgoing event payload.
+     * Both ride in the event `data` k/v rather than as top-level fields so server schema stays
+     * unchanged and old SDKs without session support remain compatible.
+     *
+     * `sessionForegroundMs` lets the server compute precise session length as
+     * `max(sessionForegroundMs)` per sessionId — robust against process kill since each event
+     * carries an up-to-that-point snapshot, no need for an unreliable session_end event.
+     */
+    private fun injectSessionId(data: JSONObject) {
+        val ctx = FlareLane.getApplicationContext() ?: return
+        EventDataMerger.mergeSessionMetadata(
+            data,
+            sessionId = SessionManager.currentSessionId(ctx),
+            sessionForegroundMs = SessionManager.currentSessionForegroundMs(ctx)
+        )
+        SessionManager.touch(ctx)
     }
 
     @Throws(Exception::class)
@@ -141,6 +175,9 @@ internal object EventService {
         val subjectType = if (userId != null) "user" else "device"
         val subjectId = userId ?: deviceId
 
+        val eventData = data ?: JSONObject()
+        injectSessionId(eventData)
+
         val event = JSONObject()
             .put("type", type)
             .put("subjectType", subjectType)
@@ -149,8 +186,8 @@ internal object EventService {
             .put("platform", Constants.SDK_PLATFORM)
             .put("deviceId", deviceId)
 
-        if (data != null) {
-            event.put("data", data)
+        if (eventData.length() > 0) {
+            event.put("data", eventData)
         }
 
         if (userId != null) {

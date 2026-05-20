@@ -11,6 +11,8 @@ class BaseSharedPreferences {
     private static final String USER_ID_KEY = "com.flarelane.USER_ID_KEY";
     private static final String IS_SUBSCRIBED_KEY = "com.flarelane.IS_SUBSCRIBED_KEY";
     private static final String ALREADY_PERMISSION_ASKED_KEY = "com.flarelane.ALREADY_PERMISSION_ASKED_KEY";
+    private static final String LAST_ACTIVATED_AT_KEY = "com.flarelane.LAST_ACTIVATED_AT_KEY";
+    private static final String LAST_SYNCED_PERMISSION_KEY = "com.flarelane.LAST_SYNCED_PERMISSION_KEY";
 
     private static String getSharedPreferencesKey(Context context) {
         try {
@@ -107,6 +109,29 @@ class BaseSharedPreferences {
     public static boolean setAlreadyPermissionAsked(Context context, boolean asked) {
         android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
         editor.putBoolean(ALREADY_PERMISSION_ASKED_KEY, asked);
+        return editor.commit();
+    }
+
+    public static long getLastActivatedAt(Context context) {
+        return getSharedPreferences(context).getLong(LAST_ACTIVATED_AT_KEY, 0L);
+    }
+
+    public static boolean setLastActivatedAt(Context context, long time) {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.putLong(LAST_ACTIVATED_AT_KEY, time);
+        return editor.commit();
+    }
+
+    /** Returns null if never synced before. */
+    public static Boolean getLastSyncedPermission(Context context) {
+        android.content.SharedPreferences prefs = getSharedPreferences(context);
+        if (!prefs.contains(LAST_SYNCED_PERMISSION_KEY)) return null;
+        return prefs.getBoolean(LAST_SYNCED_PERMISSION_KEY, false);
+    }
+
+    public static boolean setLastSyncedPermission(Context context, boolean granted) {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        editor.putBoolean(LAST_SYNCED_PERMISSION_KEY, granted);
         return editor.commit();
     }
 }
