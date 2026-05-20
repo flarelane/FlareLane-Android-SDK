@@ -88,8 +88,14 @@ internal object EventService {
             Logger.verbose("Duplicate $eventType prevented: ${notification.id}")
             return
         }
-        create(projectId, deviceId, notification.id, eventType, userId, dataBuilder?.invoke())
-        afterEmit?.invoke()
+        // Guarantee afterEmit runs even if server event send throws — the user action
+        // (e.g. click handler) must not be dropped because of a transient network failure.
+        // The dedup mark is already in place, so cross-restart retry is server-side concern.
+        try {
+            create(projectId, deviceId, notification.id, eventType, userId, dataBuilder?.invoke())
+        } finally {
+            afterEmit?.invoke()
+        }
     }
 
     @Throws(Exception::class)
