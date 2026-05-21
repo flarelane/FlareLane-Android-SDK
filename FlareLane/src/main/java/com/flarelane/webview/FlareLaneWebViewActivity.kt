@@ -75,6 +75,22 @@ internal class FlareLaneWebViewActivity : Activity() {
         webView.loadUrl(loadUrl)
     }
 
+    /**
+     * The launcher (`show()`) uses FLAG_ACTIVITY_SINGLE_TOP to avoid stacking duplicate
+     * WebView instances on top of each other when the user taps multiple notifications.
+     * When that flag triggers reuse, Android skips onCreate and delivers the new Intent
+     * here — without this override the new LOAD_URL extra would be silently dropped and
+     * the visible page would stay on the URL from the first click.
+     */
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val newUrl = intent?.getStringExtra(LOAD_URL)
+        if (newUrl.isNullOrEmpty()) return
+        setTextUrlHost(newUrl)
+        webView.loadUrl(newUrl)
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         super.onBackPressed()

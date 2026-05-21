@@ -1,0 +1,49 @@
+name: Tests
+
+on:
+  pull_request:
+
+# Least-privilege token: the unit-test job only needs to read the checked-out source.
+# Anything else (writing comments, uploading caches, etc.) must explicitly opt in.
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    name: Unit tests (JVM)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        # No git push / API calls from this job — don't leave the auth token sitting in the
+        # checkout's local git config where downstream steps could pick it up.
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Run library unit tests
+        run: ./gradlew :FlareLane:testDebugUnitTest --stacktrace
+
+      - name: Upload unit test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-reports
+          path: |
+            FlareLane/build/reports/tests/
+            FlareLane/build/test-results/
