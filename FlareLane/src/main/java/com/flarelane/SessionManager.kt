@@ -84,17 +84,17 @@ internal object SessionManager {
         val p = prefs(context)
         val lastEventAt = p.getLong(KEY_LAST_EVENT_AT, 0L)
         return if (SessionMath.shouldStartNewSession(now, lastEventAt, INACTIVITY_TIMEOUT_MS)) {
+            foregroundStartedAt = now
             p.edit()
                 .putLong(KEY_SESSION_ID, now)
                 .putLong(KEY_LAST_EVENT_AT, now)
                 .putLong(KEY_SESSION_FOREGROUND_MS, 0L)
                 .apply()
-            foregroundStartedAt = now
             Logger.info("Session", "new session started", mapOf("sessionId" to now))
             true
         } else {
-            p.edit().putLong(KEY_LAST_EVENT_AT, now).apply()
             foregroundStartedAt = now
+            p.edit().putLong(KEY_LAST_EVENT_AT, now).apply()
             false
         }
     }

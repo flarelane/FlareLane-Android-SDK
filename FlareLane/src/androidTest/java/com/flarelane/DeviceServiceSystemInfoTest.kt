@@ -50,10 +50,8 @@ class DeviceServiceSystemInfoTest {
             "notificationPermission field must be present in register/activate body",
             info.has("notificationPermission")
         )
-        // No exception means it's a boolean. Either true or false is contractually valid.
-        val value = info.getBoolean("notificationPermission")
-        // Strictly assert boolean type (would throw above if missing/non-bool); record the value.
-        assertTrue("notificationPermission must be boolean (read as $value)", value || !value)
+        // getBoolean throws if missing/non-bool, so this both validates type and records the value.
+        info.getBoolean("notificationPermission")
     }
 
     @Test
