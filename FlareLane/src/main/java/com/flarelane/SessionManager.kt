@@ -39,18 +39,22 @@ internal object SessionMath {
         return now - lastEventAt > timeoutMs
     }
 
-    /** onBackground: fold the in-progress segment into the accumulator (0 if no segment). */
+    /**
+     * onBackground: fold the in-progress segment into the accumulator (0 if no segment).
+     * Clamps the delta to >= 0 so a wall-clock rewind (NTP / user setting) can't drag the
+     * accumulator backwards.
+     */
     @JvmStatic
     fun commitInProgressSegment(prevAccumulated: Long, foregroundStartedAt: Long, now: Long): Long {
         if (foregroundStartedAt <= 0L) return prevAccumulated
-        return prevAccumulated + (now - foregroundStartedAt)
+        return prevAccumulated + (now - foregroundStartedAt).coerceAtLeast(0L)
     }
 
     /** Read-side snapshot: accumulated + any still-in-progress segment. */
     @JvmStatic
     fun foregroundSnapshot(accumulated: Long, foregroundStartedAt: Long, now: Long): Long {
         if (foregroundStartedAt <= 0L) return accumulated
-        return accumulated + (now - foregroundStartedAt)
+        return accumulated + (now - foregroundStartedAt).coerceAtLeast(0L)
     }
 }
 
@@ -118,6 +122,7 @@ internal object SessionManager {
      * is started).
      */
     @JvmStatic
+    @Synchronized
     fun currentSessionId(context: Context): Long {
         val p = prefs(context)
         val sid = p.getLong(KEY_SESSION_ID, 0L)

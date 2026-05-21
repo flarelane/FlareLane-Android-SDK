@@ -42,7 +42,7 @@ class ActivateThrottle {
 
     private static final AtomicBoolean isInFlight = new AtomicBoolean(false);
     private static long backgroundedAt = 0L;
-    private static boolean observerRegistered = false;
+    private static final AtomicBoolean observerRegistered = new AtomicBoolean(false);
 
     private ActivateThrottle() {}
 
@@ -65,8 +65,7 @@ class ActivateThrottle {
     }
 
     static void registerObserver(Context context) {
-        if (observerRegistered) return;
-        observerRegistered = true;
+        if (!observerRegistered.compareAndSet(false, true)) return;
         final Context appContext = context.getApplicationContext();
         // ProcessLifecycleOwner.addObserver must run on the main thread. Handler is created
         // here (method-local) instead of as a class field so the class is loadable by a JVM
