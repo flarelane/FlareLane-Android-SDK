@@ -4,6 +4,7 @@ import android.content.Context;
 import android.os.Build;
 
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 
@@ -28,6 +29,7 @@ class DeviceService {
         data.put("languageCode", Locale.getDefault().getLanguage());
         data.put("countryCode", Locale.getDefault().getCountry());
         data.put("sdkType", FlareLane.SdkInfo.type.toString());
+        data.put("notificationPermission", NotificationManagerCompat.from(context).areNotificationsEnabled());
 
         return data;
     }

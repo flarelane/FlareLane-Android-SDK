@@ -47,6 +47,7 @@ public class Helper {
             PackageManager pm = context.getPackageManager();
             PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), 0);
             String versionName = packageInfo.versionName;
+            if (versionName == null) return null;
 
             // SemVer: major.minor.patch
             String semVerRegex = "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$";
