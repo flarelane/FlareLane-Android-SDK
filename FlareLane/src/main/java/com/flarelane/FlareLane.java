@@ -37,17 +37,6 @@ public class FlareLane {
     protected static boolean requestPermissionOnLaunch = false;
     private static final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    /**
-     * Application context cached by [initWithContext] so SDK-internal components invoked from
-     * call sites without a Context handy (e.g. EventService.injectSessionId) can still reach
-     * SharedPreferences. Always the application context — never an Activity — so no leak risk.
-     */
-    private static Context applicationContext = null;
-
-    static Context getApplicationContext() {
-        return applicationContext;
-    }
-
     private static final TaskQueueManager taskQueueManager = TaskQueueManager.getInstance();
     private static final Throttler inAppMessageThrottler = new Throttler(500); // 0.5 seconds in milliseconds
 
@@ -62,7 +51,6 @@ public class FlareLane {
             }
 
             FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
-            applicationContext = context.getApplicationContext();
             com.flarelane.Logger.info("Init", "FlareLane initialized", Collections.singletonMap("projectId", projectId));
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
@@ -72,9 +60,8 @@ public class FlareLane {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
                 com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
                 com.flarelane.BaseSharedPreferences.setProjectId(context, projectId);
-                // New device — wipe activate/session state so first foreground triggers a fresh activate
+                // New device — wipe activate throttle state so first foreground triggers a fresh activate
                 com.flarelane.BaseSharedPreferences.setLastActivatedAt(context, 0L);
-                com.flarelane.SessionManager.reset(context);
             }
 
             ActivateThrottle.registerObserver(context);
@@ -363,9 +350,8 @@ public class FlareLane {
             com.flarelane.BaseSharedPreferences.setAlreadyPermissionAsked(context, false);
             com.flarelane.BaseSharedPreferences.setProjectId(context, null);
 
-            // Reset activate/session throttle state — next foreground will trigger a fresh activate
+            // Reset activate throttle state — next foreground will trigger a fresh activate
             com.flarelane.BaseSharedPreferences.setLastActivatedAt(context, 0L);
-            com.flarelane.SessionManager.reset(context);
             ActivateThrottle.releaseInFlight();
 
             // Reset task queue state
@@ -416,9 +402,6 @@ public class FlareLane {
                     @Override
                     public void onSuccess(Device device) {
                         ActivateThrottle.onActivateSuccess(context);
-                        // First install — handleAppStart couldn't fire @session_start because
-                        // deviceId was null. Now that register succeeded, fire it.
-                        ActivateThrottle.fireSessionStartIfReady(context);
                         if (callback != null) callback.run();
                         if (!FlareLane.isSubscribed(context) && com.flarelane.FlareLane.requestPermissionOnLaunch && Helper.appInForeground(context)) {
                             com.flarelane.FlareLane.requestPermissionForNotifications(context, null);

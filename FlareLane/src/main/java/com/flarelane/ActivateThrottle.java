@@ -80,8 +80,6 @@ class ActivateThrottle {
                 @Override
                 public void onStop(@NonNull LifecycleOwner owner) {
                     backgroundedAt = System.currentTimeMillis();
-                    // Commit in-progress engagement segment so session length survives a kill.
-                    SessionManager.onBackground(appContext);
                 }
             })
         );
@@ -108,13 +106,6 @@ class ActivateThrottle {
                 log.put("backgroundDurationMs", now - backgroundedAt);
                 log.put("sinceLastActivateMs", now - lastActivated);
                 Logger.verbose("Device", "activate skipped", log);
-            }
-
-            // Session — fire @session_start whenever a new session begins. On first install
-            // deviceId is still null here; the register success path calls fireSessionStartIfReady
-            // again once it's available.
-            if (SessionManager.onForeground(context)) {
-                fireSessionStartIfReady(context);
             }
         } catch (Exception e) {
             BaseErrorHandler.handle(e);
@@ -171,24 +162,5 @@ class ActivateThrottle {
         boolean current = NotificationManagerCompat.from(context).areNotificationsEnabled();
         BaseSharedPreferences.setLastSyncedPermission(context, current);
         isInFlight.set(false);
-    }
-
-    /**
-     * Fire @session_start if all the prerequisites are available. Called from both
-     * handleAppStart (existing device path) and the register success callback (first install).
-     * Idempotent against SessionManager — if a previous fire already happened within the
-     * inactivity window, the next session check sees the recent lastEventAt and skips.
-     */
-    static void fireSessionStartIfReady(Context context) {
-        try {
-            String deviceId = BaseSharedPreferences.getDeviceId(context, true);
-            String projectId = BaseSharedPreferences.getProjectId(context, true);
-            String userId = BaseSharedPreferences.getUserId(context, true);
-            if (deviceId != null && projectId != null) {
-                EventService.trackEvent(projectId, deviceId, userId, "@session_start", null);
-            }
-        } catch (Exception e) {
-            BaseErrorHandler.handle(e);
-        }
     }
 }

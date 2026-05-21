@@ -14,12 +14,12 @@ import org.junit.runner.RunWith
 
 /**
  * Coverage for the device-state lifecycle hooks (resetDevice, projectId switch) — the points
- * where activate-throttle and session state must be wiped so a stale device doesn't bleed
- * statistics into a new identity.
+ * where activate-throttle state must be wiped so a stale device doesn't bleed statistics
+ * into a new identity.
  *
  * These are instrumented tests because they exercise the real SharedPreferences via
- * BaseSharedPreferences + SessionManager. The actual register/activate HTTP calls are not
- * exercised here (network-dependent); see AppLaunchE2ETest for the full integration path.
+ * BaseSharedPreferences. The actual register/activate HTTP calls are not exercised here
+ * (network-dependent).
  */
 @RunWith(AndroidJUnit4::class)
 class DeviceLifecycleTest {
@@ -29,12 +29,9 @@ class DeviceLifecycleTest {
     @Before
     fun setup() {
         context = ApplicationProvider.getApplicationContext()
-        // Establish a known state for each test: stale activation + stale session present.
+        // Establish a known state for each test: stale activation present.
         BaseSharedPreferences.setLastActivatedAt(context, 1_700_000_000_000L)
         BaseSharedPreferences.setLastSyncedPermission(context, true)
-        SessionManager.onForeground(context)
-        Thread.sleep(80)
-        SessionManager.onBackground(context)
     }
 
     @Test
@@ -46,23 +43,6 @@ class DeviceLifecycleTest {
             "resetDevice must clear the activate throttle so the next launch fires a fresh activate",
             0L, BaseSharedPreferences.getLastActivatedAt(context)
         )
-    }
-
-    @Test
-    fun resetDevice_WipesSessionState() {
-        // Pre-condition: SessionManager has a non-zero sessionId + accumulated foreground time
-        val sidBefore = SessionManager.currentSessionId(context)
-        assertNotEquals(0L, sidBefore)
-        assertTrue(SessionManager.currentSessionForegroundMs(context) > 0L)
-
-        FlareLane.resetDevice(context)
-        assertEquals(
-            "resetDevice must clear sessionForegroundMs",
-            0L, SessionManager.currentSessionForegroundMs(context)
-        )
-        // currentSessionId lazily re-inits, so just assert it's a *different* sessionId than before.
-        val sidAfter = SessionManager.currentSessionId(context)
-        assertNotEquals("sessionId must roll after reset", sidBefore, sidAfter)
     }
 
     @Test
@@ -84,16 +64,11 @@ class DeviceLifecycleTest {
     }
 
     @Test
-    fun initWithContext_DifferentProjectId_ResetsThrottleAndSession() {
+    fun initWithContext_DifferentProjectId_ResetsThrottle() {
         // Simulate an existing project's persisted state.
         BaseSharedPreferences.setProjectId(context, "old-project-id")
         BaseSharedPreferences.setDeviceId(context, "old-device-id")
         BaseSharedPreferences.setLastActivatedAt(context, 1_700_000_000_000L)
-        SessionManager.onForeground(context)
-        Thread.sleep(50)
-        SessionManager.onBackground(context)
-        val staleForegroundMs = SessionManager.currentSessionForegroundMs(context)
-        assertTrue(staleForegroundMs > 0L)
 
         // Switch to a different projectId via initWithContext.
         FlareLane.initWithContext(context, "new-project-id", false)
@@ -102,10 +77,6 @@ class DeviceLifecycleTest {
         assertEquals(
             "switching projectId must wipe the previous device's activate throttle",
             0L, BaseSharedPreferences.getLastActivatedAt(context)
-        )
-        assertEquals(
-            "switching projectId must wipe the previous session's foreground accumulator",
-            0L, SessionManager.currentSessionForegroundMs(context)
         )
         // deviceId must be cleared so the next foreground triggers a fresh register
         // (nullable=true to read without throwing).
