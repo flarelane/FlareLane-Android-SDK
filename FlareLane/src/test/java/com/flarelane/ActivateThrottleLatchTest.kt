@@ -63,19 +63,25 @@ class ActivateThrottleLatchTest {
 
             repeat(threadCount) {
                 exec.submit {
-                    startGate.await()                    // 모든 thread를 한 번에 풀어줌
-                    if (ActivateThrottle.acquireInFlight()) {
-                        successCount.incrementAndGet()
+                    try {
+                        startGate.await()                    // 모든 thread를 한 번에 풀어줌
+                        if (ActivateThrottle.acquireInFlight()) {
+                            successCount.incrementAndGet()
+                        }
+                    } finally {
+                        finishGate.countDown()
                     }
-                    finishGate.countDown()
                 }
             }
-            startGate.countDown()
-            assertTrue(
-                "concurrent acquire의 동시 완료를 5초 안에 끝내야 함",
-                finishGate.await(5, TimeUnit.SECONDS)
-            )
-            exec.shutdownNow()
+            try {
+                startGate.countDown()
+                assertTrue(
+                    "concurrent acquire의 동시 완료를 5초 안에 끝내야 함",
+                    finishGate.await(5, TimeUnit.SECONDS)
+                )
+            } finally {
+                exec.shutdownNow()
+            }
 
             assertEquals(
                 "동시 acquire 시 정확히 한 thread만 통과해야 함",
