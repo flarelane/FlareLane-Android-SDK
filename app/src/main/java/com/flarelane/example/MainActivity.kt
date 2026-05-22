@@ -30,6 +30,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Seed toggle states from the persisted SDK values so the button labels
+        // reflect reality on launch, instead of a stale `false` default.
+        isSubscribedState = FlareLane.isSubscribed(context)
+
 //        askNotificationPermission();
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener(OnCompleteListener { task ->
@@ -47,8 +51,13 @@ class MainActivity : AppCompatActivity() {
         userIdButton.setOnClickListener(object : View.OnClickListener {
             var userId: String? = null
             override fun onClick(v: View) {
-                FlareLane.setUserId(context, userId)
-                userId = if (userId == null) "myuser@flarelane.com" else null
+                // Compute the next value first so the SDK call and the label both reflect
+                // the action the user just took. Calling `setUserId(userId)` *before*
+                // computing the next value would invert the meaning of the first tap
+                // (label says "del" but no userId had been set).
+                val nextUserId = if (userId == null) "myuser@flarelane.com" else null
+                FlareLane.setUserId(context, nextUserId)
+                userId = nextUserId
                 userIdButton.text = "Toggle UserId (${if (userId != null) "del" else "set"})"
             }
         })
@@ -126,7 +135,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val subscribeButton = findViewById<Button>(R.id.subscribeButton)
-        subscribeButton.text = "Toggle Subscribe (set)"
+        subscribeButton.text = "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
         subscribeButton.setOnClickListener {
             if (!isSubscribedState) {
                 FlareLane.subscribe(context, true) { subscribed ->

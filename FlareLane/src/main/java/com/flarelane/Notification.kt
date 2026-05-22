@@ -12,7 +12,7 @@ import java.util.Date
 import kotlin.math.absoluteValue
 
 @Parcelize
-data class Notification(
+data class Notification @JvmOverloads constructor(
     @JvmField val id: String,
     @JvmField val body: String,
     @JvmField val data: String?,
@@ -21,7 +21,9 @@ data class Notification(
     @JvmField val imageUrl: String?,
     // `buttons` defaults to null so existing Java/Kotlin call sites that predate 1.10.0
     // (and only pass id/body/data/title/url/imageUrl positionally) keep compiling against
-    // the data-class primary constructor.
+    // the data-class primary constructor. `@JvmOverloads` makes the 6/7/8-arg variants
+    // visible to Java so a `new Notification(id, body, data, title, url, imageUrl)` call
+    // from an older host app still resolves.
     @JvmField val buttons: String? = null,
     @JvmField val clickedButtonIndex: Int? = null
 ) : Parcelable, InteractionClass {
