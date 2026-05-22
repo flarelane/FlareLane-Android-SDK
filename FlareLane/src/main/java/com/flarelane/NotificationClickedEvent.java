@@ -32,9 +32,17 @@ public class NotificationClickedEvent {
     /**
      * Sends the CLICKED event to the server and invokes {@code FlareLane.notificationClickedHandler}
      * (or stashes the notification as `unhandledClickedNotification` when no handler is registered yet).
+     *
+     * <p>Idempotent per notification: {@link NotificationEventProcessor#shouldProcess} guards entry
+     * so that a single notification can never produce more than one CLICKED POST + one handler
+     * invocation, even when the OS re-fires the same PendingIntent or the user re-taps quickly.
      */
     public void process() {
         try {
+            if (!NotificationEventProcessor.INSTANCE.shouldProcess(context, notification.id, EventType.Clicked)) {
+                Logger.verbose("Notification CLICKED already processed, skipping: " + notification.id);
+                return;
+            }
             String projectId = BaseSharedPreferences.getProjectId(context, false);
             String deviceId = BaseSharedPreferences.getDeviceId(context, false);
             String userId = BaseSharedPreferences.getUserId(context, true);

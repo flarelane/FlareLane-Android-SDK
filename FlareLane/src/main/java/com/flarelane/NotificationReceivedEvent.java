@@ -122,7 +122,15 @@ public class NotificationReceivedEvent {
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
 
-                        if (isForeground) {
+                        // Idempotency guard: FCM may redeliver the same message and `event.display()`
+                        // can be called multiple times by a foreground handler. We need RECEIVED
+                        // events to land on the backend exactly once per (notification, lifecycle)
+                        // pairing — `NotificationEventProcessor` keys on `id#eventType` so a
+                        // receive followed by a click stays as two distinct events.
+                        String eventType = isForeground ? EventType.ForegroundReceived : EventType.BackgroundReceived;
+                        if (!NotificationEventProcessor.INSTANCE.shouldProcess(context, flarelaneNotification.id, eventType)) {
+                            Logger.verbose("Notification " + eventType + " already processed, skipping: " + flarelaneNotification.id);
+                        } else if (isForeground) {
                             EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification, userId);
                         } else {
                             EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification, userId);
