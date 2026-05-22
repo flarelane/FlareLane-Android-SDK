@@ -22,6 +22,8 @@ import org.json.JSONObject
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
     private var isSetTags: Boolean = false
+    private var isSetUserAttributes: Boolean = false
+    private var isSubscribedState: Boolean = false
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,16 +41,21 @@ class MainActivity : AppCompatActivity() {
                 Log.d("FlareLane", "Example FCM Token: $token")
             })
 
-        findViewById<Button>(R.id.setUserIdButton).setOnClickListener(object :
-            View.OnClickListener {
+        // Toggle label convention: (set) = next tap will set, (del) = next tap will delete.
+        val userIdButton = findViewById<Button>(R.id.setUserIdButton)
+        userIdButton.text = "Toggle UserId (set)"
+        userIdButton.setOnClickListener(object : View.OnClickListener {
             var userId: String? = null
             override fun onClick(v: View) {
                 FlareLane.setUserId(context, userId)
                 userId = if (userId == null) "myuser@flarelane.com" else null
+                userIdButton.text = "Toggle UserId (${if (userId != null) "del" else "set"})"
             }
         })
 
-        findViewById<Button>(R.id.toggleTagsButton).setOnClickListener {
+        val tagsButton = findViewById<Button>(R.id.toggleTagsButton)
+        tagsButton.text = "Toggle Tags (set)"
+        tagsButton.setOnClickListener {
             try {
                 if (isSetTags) {
                     val data = JSONObject()
@@ -63,6 +70,7 @@ class MainActivity : AppCompatActivity() {
                     FlareLane.setTags(context, data)
                     isSetTags = true
                 }
+                tagsButton.text = "Toggle Tags (${if (isSetTags) "del" else "set"})"
             } catch (e: JSONException) {
                 e.printStackTrace()
             }
@@ -79,24 +87,65 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val userAttributesButton = findViewById<Button>(R.id.setUserAttributesButton)
+        userAttributesButton.text = "Toggle User Attributes (set)"
+        userAttributesButton.setOnClickListener {
+            try {
+                val attributes = JSONObject()
+                if (isSetUserAttributes) {
+                    // Clear all attributes by setting them to null.
+                    attributes.put("name", JSONObject.NULL)
+                    attributes.put("email", JSONObject.NULL)
+                    attributes.put("phoneNumber", JSONObject.NULL)
+                    attributes.put("dob", JSONObject.NULL)
+                    attributes.put("timeZone", JSONObject.NULL)
+                    attributes.put("country", JSONObject.NULL)
+                    attributes.put("language", JSONObject.NULL)
+                    isSetUserAttributes = false
+                } else {
+                    attributes.put("name", "Test User")
+                    attributes.put("email", "test@example.com")
+                    attributes.put("phoneNumber", "+821012345678")
+                    attributes.put("dob", "1990-01-01")
+                    attributes.put("timeZone", "Asia/Seoul")
+                    attributes.put("country", "KR")
+                    attributes.put("language", "ko")
+                    isSetUserAttributes = true
+                }
+                FlareLane.setUserAttributes(context, attributes)
+                userAttributesButton.text =
+                    "Toggle User Attributes (${if (isSetUserAttributes) "del" else "set"})"
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         findViewById<Button>(R.id.isSubscribedButton).setOnClickListener {
             val isSubscribed = FlareLane.isSubscribed(context)
             Log.d("FlareLane", "isSubscribed(): $isSubscribed")
         }
 
-        findViewById<Button>(R.id.subscribeButton).setOnClickListener {
-            FlareLane.subscribe(
-                context,
-                true
-            ) { isSubscribed -> Log.d("FlareLane", "subscribe(): $isSubscribed") }
-        }
-
-        findViewById<Button>(R.id.unsubscribeButton).setOnClickListener {
-            FlareLane.unsubscribe(context) { isSubscribed ->
-                Log.d(
-                    "FlareLane",
-                    "unsubscribe(): $isSubscribed"
-                )
+        val subscribeButton = findViewById<Button>(R.id.subscribeButton)
+        subscribeButton.text = "Toggle Subscribe (set)"
+        subscribeButton.setOnClickListener {
+            if (!isSubscribedState) {
+                FlareLane.subscribe(context, true) { subscribed ->
+                    Log.d("FlareLane", "subscribe(): $subscribed")
+                    isSubscribedState = subscribed
+                    runOnUiThread {
+                        subscribeButton.text =
+                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
+                    }
+                }
+            } else {
+                FlareLane.unsubscribe(context) { subscribed ->
+                    Log.d("FlareLane", "unsubscribe(): $subscribed")
+                    isSubscribedState = subscribed
+                    runOnUiThread {
+                        subscribeButton.text =
+                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
+                    }
+                }
             }
         }
 

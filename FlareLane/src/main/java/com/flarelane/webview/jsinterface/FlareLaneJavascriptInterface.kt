@@ -51,6 +51,13 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
     }
 
     @JavascriptInterface
+    fun setUserAttributes(jsonString: String) {
+        jsonString.toJSONObject {
+            FlareLane.setUserAttributes(context, it)
+        }
+    }
+
+    @JavascriptInterface
     fun openUrl(url: String) {
         if (context is Activity) {
             context.runOnUiThread {
