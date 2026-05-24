@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.8.5";
+        public static String version = "1.10.0";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -242,6 +242,29 @@ public class FlareLane {
                     });
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                }
+            }
+        });
+    }
+
+    /**
+     * Set user attributes (name/email/phoneNumber/dob/timeZone/country/language, etc.).
+     * Sent only when userId is set, matching Web SDK behavior.
+     */
+    public static void setUserAttributes(Context context, JSONObject attributes) {
+        taskQueueManager.addTask(new NamedRunnable("setUserAttributes") {
+            @Override
+            public void run() {
+                try {
+                    com.flarelane.DeviceService.setUserAttributes(context, attributes, new Runnable() {
+                        @Override
+                        public void run() {
+                            completeTask();
+                        }
+                    });
+                } catch (Exception e) {
+                    com.flarelane.BaseErrorHandler.handle(e);
+                    completeTask();
                 }
             }
         });

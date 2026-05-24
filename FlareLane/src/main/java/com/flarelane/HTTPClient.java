@@ -118,7 +118,21 @@ class HTTPClient {
         }
 
         String response = convertStreamToString(in);
-        JSONObject json = new JSONObject(response);
+        // Defensive: a malformed/empty server response would otherwise bubble a
+        // JSONException up to the outer `catch (Exception)`, which silently
+        // swallows it without invoking the responseHandler — leaving the
+        // FlareLaneTaskManager waiting until its timeout. Catch here so callers
+        // always observe an onFailure for HTTP-level success with bad body.
+        JSONObject json;
+        try {
+            json = new JSONObject(response);
+        } catch (org.json.JSONException e) {
+            com.flarelane.Logger.error("Failed to parse response JSON: " + e + ", body: " + response);
+            if (responseHandler != null) {
+                responseHandler.onFailure(responseCode, new JSONObject());
+            }
+            return;
+        }
 
         if (responseHandler != null) {
             if (responseCode >= 200 && responseCode < 400) {

@@ -15,7 +15,21 @@ internal object EventService {
         notification: Notification,
         userId: String?
     ) {
-        create(projectId, deviceId, notification.id, EventType.Clicked, userId)
+        // If the OS reported a button-slot tap, attach button info. Gate is the index (the
+        // "was a button clicked" question), so out-of-range / stale-category cases still send
+        // isButton=true plus the index; the button label/url are filled in best-effort via
+        // the resolved button object. Body-only clicks leave `data` null — preserves the
+        // pre-buttons payload shape.
+        val data: JSONObject? = notification.clickedButtonIndex?.let { idx ->
+            JSONObject().apply {
+                put("isButton", true)
+                put("buttonIndex", idx)
+                notification.clickedButton?.let { button -> put("buttonLabel", button.label) }
+                val url = notification.clickedUrl
+                if (!url.isNullOrEmpty()) put("url", url)
+            }
+        }
+        create(projectId, deviceId, notification.id, EventType.Clicked, userId, data)
 
         if (FlareLane.notificationClickedHandler != null) {
             FlareLane.notificationClickedHandler.onClicked(notification)
@@ -52,7 +66,7 @@ internal object EventService {
     }
 
     @Throws(Exception::class)
-    private fun create(projectId: String, deviceId: String, notificationId: String, type: String, userId: String?) {
+    private fun create(projectId: String, deviceId: String, notificationId: String, type: String, userId: String?, data: JSONObject? = null) {
         val body = JSONObject()
         body.put("notificationId", notificationId)
         body.put("deviceId", deviceId)
@@ -62,6 +76,10 @@ internal object EventService {
 
         if (userId != null) {
             body.put("userId", userId)
+        }
+
+        if (data != null && data.length() > 0) {
+            body.put("data", data)
         }
 
         HTTPClient.post(

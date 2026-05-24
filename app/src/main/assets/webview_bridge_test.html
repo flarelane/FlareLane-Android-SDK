@@ -58,6 +58,7 @@
     <button class="func_btn" id="setUserId">setUserId</button>
     <button class="func_btn" id="setTags">setTags</button>
     <button class="func_btn" id="trackEvent">trackEvent</button>
+    <button class="func_btn" id="setUserAttributes">setUserAttributes</button>
     <button class="func_btn" id="openUrl">openUrl: naver.com</button>
 </div>
 <script>
@@ -75,6 +76,16 @@
       $('setUserId').onclick = () => FlareLaneBridge.setUserId('test_user');
       $('setTags').onclick = () => FlareLaneBridge.setTags(JSON.stringify({ a: 'a', b: 'b', c: 'c' }));
       $('trackEvent').onclick = () => FlareLaneBridge.trackEvent('trackEvent', JSON.stringify({ a: 'a', b: 'b', c: 'c' }));
+      $('setUserAttributes').onclick = () => FlareLaneBridge.setUserAttributes(JSON.stringify({
+        userId: 'test_user',
+        name: 'Test User',
+        email: 'test@example.com',
+        phoneNumber: '+821012345678',
+        dob: '1990-01-01',
+        timeZone: 'Asia/Seoul',
+        country: 'KR',
+        language: 'ko'
+      }));
       $('openUrl').onclick = () => FlareLaneBridge.openUrl('https://naver.com');
     </script>
 </body>

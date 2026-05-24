@@ -112,6 +112,45 @@ class DeviceService {
         });
     }
 
+    /**
+     * Set user attributes — sends attributes with deviceId/userId to backend.
+     * Matches Web SDK behavior: skip when userId is missing.
+     */
+    static void setUserAttributes(Context context, JSONObject attributes, @Nullable Runnable onComplete) throws Exception {
+        String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
+        String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
+        String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
+
+        if (userId == null || userId.trim().isEmpty()) {
+            Logger.verbose("There is no userId. setUserAttributes is skipped.");
+            if (onComplete != null) onComplete.run();
+            return;
+        }
+
+        JSONObject body = new JSONObject();
+        java.util.Iterator<String> keys = attributes.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            body.put(key, attributes.get(key));
+        }
+        body.put("deviceId", deviceId);
+        body.put("userId", userId);
+
+        HTTPClient.patch("internal/v1/projects/" + projectId + "/user-attributes", body, new HTTPClient.ResponseHandler() {
+            @Override
+            void onSuccess(int responseCode, JSONObject response) {
+                super.onSuccess(responseCode, response);
+                if (onComplete != null) onComplete.run();
+            }
+
+            @Override
+            void onFailure(int responseCode, JSONObject response) {
+                super.onFailure(responseCode, response);
+                if (onComplete != null) onComplete.run();
+            }
+        });
+    }
+
     protected interface ResponseHandler {
         void onSuccess(Device device);
     }

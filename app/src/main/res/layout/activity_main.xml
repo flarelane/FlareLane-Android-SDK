@@ -43,6 +43,12 @@
             android:text="Track Event (test_event)" />
 
         <Button
+            android:id="@+id/setUserAttributesButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Toggle User Attributes" />
+
+        <Button
             android:id="@+id/isSubscribedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -52,13 +58,7 @@
             android:id="@+id/subscribeButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="subscribe" />
-
-        <Button
-            android:id="@+id/unsubscribeButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="unsubscribe" />
+            android:text="Toggle Subscribe (set)" />
 
         <Button
             android:id="@+id/btn_webView_bridge_test"

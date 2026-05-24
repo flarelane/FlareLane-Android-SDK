@@ -74,7 +74,7 @@ public class FCMBroadcastReceiver extends WakefulBroadcastReceiver {
             try {
                 json.put(key, bundle.get(key));
             } catch (JSONException e) {
-                Logger.error(Log.getStackTraceString(e));
+                Logger.error("Failed to convert FCM bundle key to JSON: " + key, e);
             }
         }
 

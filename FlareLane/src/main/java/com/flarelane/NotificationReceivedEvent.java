@@ -49,11 +49,13 @@ public class NotificationReceivedEvent {
                 @Override
                 public void run() {
                     try {
-                        Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
-                                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        ExtensionsKt.putParcelableDataClass(clickedIntent, notification);
-
-                        PendingIntent contentIntent = PendingIntent.getActivity(context, new Random().nextInt(543254), clickedIntent, PendingIntent.FLAG_IMMUTABLE);
+                        // Deterministic per-notification base so two concurrent notifications
+                        // can't collide on requestCode and end up sharing a PendingIntent (which
+                        // would deliver stale extras due to FLAG_IMMUTABLE). Body taps use the
+                        // base; each action button reuses base + (index + 1) below, so the
+                        // (notification id, button slot) pair is the effective unique key.
+                        int baseRequestCode = flarelaneNotification.currentAndroidNotificationId();
+                        PendingIntent contentIntent = buildClickedPendingIntent(context, flarelaneNotification, baseRequestCode);
 
                         int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
 
@@ -98,6 +100,19 @@ public class NotificationReceivedEvent {
                             builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
                         }
 
+                        // Action buttons — one NotificationCompat.Action per parsed button. Each
+                        // PendingIntent carries a Notification with its own clickedButtonIndex
+                        // baked in (no separate Intent extra), and a distinct requestCode so the
+                        // system doesn't collapse them into a single intent.
+                        java.util.List<NotificationButton> buttons = flarelaneNotification.getButtonList();
+                        for (int i = 0; i < buttons.size(); i++) {
+                            NotificationButton button = buttons.get(i);
+                            Notification withIdx = flarelaneNotification.withClickedButtonIndex(i);
+                            PendingIntent actionIntent = buildClickedPendingIntent(
+                                    context, withIdx, baseRequestCode + i + 1);
+                            builder.addAction(0, button.label, actionIntent);
+                        }
+
                         android.app.Notification notification = builder.build();
 
                         notification.defaults |= android.app.Notification.DEFAULT_SOUND;
@@ -107,7 +122,15 @@ public class NotificationReceivedEvent {
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
 
-                        if (isForeground) {
+                        // Idempotency guard: FCM may redeliver the same message and `event.display()`
+                        // can be called multiple times by a foreground handler. We need RECEIVED
+                        // events to land on the backend exactly once per (notification, lifecycle)
+                        // pairing — `NotificationEventProcessor` keys on `id#eventType` so a
+                        // receive followed by a click stays as two distinct events.
+                        String eventType = isForeground ? EventType.ForegroundReceived : EventType.BackgroundReceived;
+                        if (!NotificationEventProcessor.INSTANCE.shouldProcess(context, flarelaneNotification.id, eventType)) {
+                            Logger.verbose("Notification " + eventType + " already processed, skipping: " + flarelaneNotification.id);
+                        } else if (isForeground) {
                             EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification, userId);
                         } else {
                             EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification, userId);
@@ -121,6 +144,23 @@ public class NotificationReceivedEvent {
             com.flarelane.BaseErrorHandler.handle(e);
         }
 
+    }
+
+    /**
+     * Build the PendingIntent that fires NotificationClickedActivity when the user taps the
+     * notification body or one of its action buttons. The caller embeds {@code clickedButtonIndex}
+     * directly on the passed {@link Notification} (via {@link Notification#withClickedButtonIndex})
+     * so there is no out-of-band Intent extra carrying the index — the Parcelable is the single
+     * source of truth for which button (if any) was tapped.
+     *
+     * <p>Caller passes a unique requestCode per PendingIntent so the system keeps them distinct
+     * (otherwise the OS would collapse them into the first one).
+     */
+    private PendingIntent buildClickedPendingIntent(Context context, Notification flarelaneNotification, int requestCode) {
+        Intent clickedIntent = new Intent(context, NotificationClickedActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        ExtensionsKt.putParcelableDataClass(clickedIntent, flarelaneNotification);
+        return PendingIntent.getActivity(context, requestCode, clickedIntent, PendingIntent.FLAG_IMMUTABLE);
     }
 
     @SuppressLint("DiscouragedApi")
