@@ -26,6 +26,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    testOptions {
+        // Return safe defaults from stubbed android framework calls (e.g. android.util.Log)
+        // instead of throwing "not mocked" at runtime, so pure JVM unit tests can exercise
+        // classes that log without pulling in Robolectric.
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {

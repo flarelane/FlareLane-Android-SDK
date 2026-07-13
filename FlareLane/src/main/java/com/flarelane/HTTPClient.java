@@ -46,6 +46,7 @@ class HTTPClient {
                     handleResponse(conn, responseHandler);
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    notifyFailure(responseHandler);
                 } finally {
                     if (conn != null)
                         conn.disconnect();
@@ -99,12 +100,39 @@ class HTTPClient {
                     handleResponse(conn, responseHandler);
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    notifyFailure(responseHandler);
                 } finally {
                     if (conn != null)
                         conn.disconnect();
                 }
             }
         }).start();
+    }
+
+    // Called from the outer catch blocks so every network-layer exception (URL
+    // build, connect, IO, or a bad handleResponse) still resolves the caller's
+    // handler. Without this, InAppService.getMessage would never see onFailure
+    // for these paths and the TaskQueueManager would stall until TIMEOUT_MS.
+    private static void notifyFailure(@Nullable ResponseHandler responseHandler) {
+        invokeSafely(responseHandler, false, -1, new JSONObject());
+    }
+
+    // Single dispatch site for handler callbacks. Swallowing exceptions here
+    // keeps them from bubbling into `sendRequestWithBody`'s outer catch, which
+    // would otherwise call `notifyFailure` and dispatch a second time. The
+    // handler contract is "exactly one of onSuccess/onFailure" — a partial
+    // dispatch that threw counts as the one call.
+    private static void invokeSafely(@Nullable ResponseHandler responseHandler, boolean success, int responseCode, JSONObject body) {
+        if (responseHandler == null) return;
+        try {
+            if (success) {
+                responseHandler.onSuccess(responseCode, body);
+            } else {
+                responseHandler.onFailure(responseCode, body);
+            }
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
     }
 
     private static void handleResponse(HttpURLConnection conn, @Nullable ResponseHandler responseHandler) throws Exception {
@@ -128,19 +156,12 @@ class HTTPClient {
             json = new JSONObject(response);
         } catch (org.json.JSONException e) {
             com.flarelane.Logger.error("Failed to parse response JSON: " + e + ", body: " + response);
-            if (responseHandler != null) {
-                responseHandler.onFailure(responseCode, new JSONObject());
-            }
+            invokeSafely(responseHandler, false, responseCode, new JSONObject());
             return;
         }
 
-        if (responseHandler != null) {
-            if (responseCode >= 200 && responseCode < 400) {
-                responseHandler.onSuccess(responseCode, json);
-            } else {
-                responseHandler.onFailure(responseCode, json);
-            }
-        }
+        boolean isSuccess = (responseCode >= 200 && responseCode < 400);
+        invokeSafely(responseHandler, isSuccess, responseCode, json);
     }
 
     private static String convertStreamToString(InputStream is) {
