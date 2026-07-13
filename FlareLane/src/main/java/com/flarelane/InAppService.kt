@@ -5,6 +5,11 @@ import com.flarelane.model.ModelInAppMessage
 import org.json.JSONObject
 
 internal object InAppService {
+    // Written from the HTTP thread (getMessage entry + response callbacks) and read
+    // from the JS/main thread (Activity.finish resets on close). @Volatile guarantees
+    // cross-thread visibility so the guard never sees a stale `true` from an already
+    // completed request.
+    @Volatile
     var isDisplaying = false
 
     @JvmStatic

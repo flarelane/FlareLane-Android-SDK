@@ -46,6 +46,7 @@ class HTTPClient {
                     handleResponse(conn, responseHandler);
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    notifyFailure(responseHandler);
                 } finally {
                     if (conn != null)
                         conn.disconnect();
@@ -99,12 +100,26 @@ class HTTPClient {
                     handleResponse(conn, responseHandler);
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    notifyFailure(responseHandler);
                 } finally {
                     if (conn != null)
                         conn.disconnect();
                 }
             }
         }).start();
+    }
+
+    // Called from the outer catch blocks so every network-layer exception (URL
+    // build, connect, IO, or a bad handleResponse) still resolves the caller's
+    // handler. Without this, InAppService.getMessage would never see onFailure
+    // for these paths and the TaskQueueManager would stall until TIMEOUT_MS.
+    private static void notifyFailure(@Nullable ResponseHandler responseHandler) {
+        if (responseHandler == null) return;
+        try {
+            responseHandler.onFailure(-1, new JSONObject());
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
     }
 
     private static void handleResponse(HttpURLConnection conn, @Nullable ResponseHandler responseHandler) throws Exception {
