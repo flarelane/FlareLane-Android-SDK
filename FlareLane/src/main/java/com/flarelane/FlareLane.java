@@ -13,7 +13,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import com.flarelane.webview.FlareLaneInAppWebViewActivity;
+import com.flarelane.webview.InAppMessagePresenter;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.10.1";
+        public static String version = "1.10.2";
     }
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
@@ -286,7 +286,9 @@ public class FlareLane {
                         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
                         InAppService.getMessage(projectId, deviceId, group, ensureData, modelInAppMessage -> {
                             if (modelInAppMessage != null) {
-                                FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
+                                // Loads the html first and starts the Activity once it is
+                                // ready, so the host app is never covered while loading.
+                                InAppMessagePresenter.INSTANCE.present(context, modelInAppMessage);
                             }
 
                             completeTask();
