@@ -83,16 +83,13 @@ class NotificationThreadCommunicationTest {
     // MARK: group summary decisions (pure logic of NotificationGroupManager)
 
     @Test
-    fun `summary id is deterministic and non-negative`() {
-        assertEquals(
-            NotificationGroupManager.summaryNotificationId("promo"),
-            NotificationGroupManager.summaryNotificationId("promo")
-        )
-        assertTrue(NotificationGroupManager.summaryNotificationId("promo") >= 0)
-        assertTrue(
-            NotificationGroupManager.summaryNotificationId("promo") !=
-                NotificationGroupManager.summaryNotificationId("news")
-        )
+    fun `pre 1_11 eight-arg constructor still maps clickedButtonIndex`() {
+        // Binary-compat shim: the old (…, clickedButtonIndex) signature must keep resolving.
+        val notification = Notification("id", "b", "{}", null, null, null, null, 1)
+
+        assertEquals(1, notification.clickedButtonIndex)
+        assertNull(notification.threadId)
+        assertNull(notification.communicationData)
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.flarelane.util.ExtensionsKt;
 
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -199,6 +200,11 @@ public class NotificationReceivedEvent {
         return PendingIntent.getActivity(context, requestCode, clickedIntent, PendingIntent.FLAG_IMMUTABLE);
     }
 
+    /** Hard cap on downloaded image bytes; larger payloads fall back to a text-only notification. */
+    private static final int MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+    /** Decoded bitmaps are downsampled to fit this edge so a huge source can't OOM the process. */
+    private static final int MAX_IMAGE_DIMENSION = 2048;
+
     /** Bounded, best-effort bitmap fetch shared by the big-picture image and the sender avatar. */
     private Bitmap downloadBitmap(String imageUrl) {
         HttpURLConnection connection = null;
@@ -209,9 +215,42 @@ public class NotificationReceivedEvent {
             connection.setConnectTimeout(10000);
             connection.setReadTimeout(10000);
             connection.connect();
-            try (InputStream in = connection.getInputStream()) {
-                return BitmapFactory.decodeStream(in);
+
+            // Buffer with a byte cap first — the stream can only be decoded once, and the size
+            // check must happen before any decode allocates memory.
+            byte[] bytes;
+            try (InputStream in = connection.getInputStream();
+                 ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+                byte[] chunk = new byte[8192];
+                int read;
+                int total = 0;
+                while ((read = in.read(chunk)) != -1) {
+                    total += read;
+                    if (total > MAX_IMAGE_BYTES) {
+                        Logger.verbose("Notification image exceeds the size limit, falling back without it");
+                        return null;
+                    }
+                    buffer.write(chunk, 0, read);
+                }
+                bytes = buffer.toByteArray();
             }
+
+            // Inspect dimensions without allocating pixels, then downsample to a safe size.
+            BitmapFactory.Options boundsOptions = new BitmapFactory.Options();
+            boundsOptions.inJustDecodeBounds = true;
+            BitmapFactory.decodeByteArray(bytes, 0, bytes.length, boundsOptions);
+            if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) {
+                return null;
+            }
+
+            BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+            decodeOptions.inSampleSize = 1;
+            while (boundsOptions.outWidth / decodeOptions.inSampleSize > MAX_IMAGE_DIMENSION
+                    || boundsOptions.outHeight / decodeOptions.inSampleSize > MAX_IMAGE_DIMENSION) {
+                decodeOptions.inSampleSize *= 2;
+            }
+
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length, decodeOptions);
         } catch (Exception e) {
             BaseErrorHandler.handle(e);
             return null;

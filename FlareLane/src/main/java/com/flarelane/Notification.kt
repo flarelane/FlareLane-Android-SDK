@@ -31,6 +31,19 @@ data class Notification @JvmOverloads constructor(
     @JvmField val communication: String? = null,
     @JvmField val clickedButtonIndex: Int? = null
 ) : Parcelable, InteractionClass {
+    // Restores the pre-1.11.0 8-arg JVM signature (..., clickedButtonIndex last) that the new
+    // threadId/communication parameters displaced, so already-compiled callers keep linking.
+    constructor(
+        id: String,
+        body: String,
+        data: String?,
+        title: String?,
+        url: String?,
+        imageUrl: String?,
+        buttons: String?,
+        clickedButtonIndex: Int?
+    ) : this(id, body, data, title, url, imageUrl, buttons, null, null, clickedButtonIndex)
+
     constructor(jsonObject: JSONObject) : this(
         jsonObject.getString("notificationId"),
         jsonObject.getString("body"),

@@ -18,12 +18,10 @@ import kotlin.math.absoluteValue
  * bug class other push SDKs shipped fixes for).
  */
 internal object NotificationGroupManager {
-    private const val SUMMARY_ID_PREFIX = "flarelane_summary_"
+    // Summaries are addressed by (tag = threadId, fixed id): a hashCode-derived id could collide
+    // between two different threadIds and let one group overwrite/cancel the other's summary.
+    private const val SUMMARY_NOTIFICATION_ID = 758293471
     private const val MAX_SUMMARY_LINES = 5
-
-    @JvmStatic
-    fun summaryNotificationId(threadId: String): Int =
-        (SUMMARY_ID_PREFIX + threadId).hashCode().absoluteValue
 
     /** A summary only makes sense once two or more children are visible. */
     @JvmStatic
@@ -54,7 +52,6 @@ internal object NotificationGroupManager {
             val manager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
                     ?: return
-            val summaryId = summaryNotificationId(threadId)
 
             val children = manager.activeNotifications.filter { sbn ->
                 sbn.notification.group == threadId &&
@@ -64,7 +61,7 @@ internal object NotificationGroupManager {
             if (!shouldShowSummary(children.size)) {
                 // Covers both "single child left" (child stands alone again) and "group emptied"
                 // (no ghost summary lingering after the user cleared every child).
-                manager.cancel(summaryId)
+                manager.cancel(threadId, SUMMARY_NOTIFICATION_ID)
                 return
             }
 
@@ -82,9 +79,10 @@ internal object NotificationGroupManager {
             val appLabel = context.applicationInfo.loadLabel(context.packageManager).toString()
 
             // Summary taps just open the app; they are not per-notification clicks, so no
-            // CLICKED event should fire from here.
+            // CLICKED event should fire from here. requestCode collisions across groups are
+            // harmless — every summary carries the identical launch intent.
             val contentIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
-                PendingIntent.getActivity(context, summaryId, it, PendingIntent.FLAG_IMMUTABLE)
+                PendingIntent.getActivity(context, threadId.hashCode().absoluteValue, it, PendingIntent.FLAG_IMMUTABLE)
             }
 
             val builder = NotificationCompat.Builder(context, channelId)
@@ -100,7 +98,7 @@ internal object NotificationGroupManager {
                 .setAutoCancel(true)
             contentIntent?.let { builder.setContentIntent(it) }
 
-            manager.notify(summaryId, builder.build())
+            manager.notify(threadId, SUMMARY_NOTIFICATION_ID, builder.build())
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
         }
