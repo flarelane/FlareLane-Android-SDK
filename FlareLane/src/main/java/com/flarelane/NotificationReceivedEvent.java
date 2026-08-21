@@ -12,6 +12,8 @@ import android.graphics.Color;
 import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.Person;
+import androidx.core.graphics.drawable.IconCompat;
 
 import com.flarelane.util.ExtensionsKt;
 
@@ -61,17 +63,17 @@ public class NotificationReceivedEvent {
 
                         Bitmap image = null;
                         if (flarelaneNotification.imageUrl != null) {
-                            try {
-                                URL url = new URL(flarelaneNotification.imageUrl);
-                                InputStream in;
-                                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-                                connection.setDoInput(true);
-                                connection.connect();
-                                in = connection.getInputStream();
-                                image = BitmapFactory.decodeStream(in);
-                            } catch (Exception e) {
-                                BaseErrorHandler.handle(e);
-                            }
+                            image = downloadBitmap(flarelaneNotification.imageUrl);
+                        }
+
+                        // Chat-style sender avatar. Failure keeps `avatar` null, which makes the
+                        // style branch below fall back to a normal notification — an app-icon
+                        // notification beats a chat bubble with a broken monogram (same policy
+                        // as iOS).
+                        NotificationCommunication communication = flarelaneNotification.getCommunicationData();
+                        Bitmap avatar = null;
+                        if (communication != null) {
+                            avatar = downloadBitmap(communication.senderImageUrl);
                         }
 
                         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, flarelaneNotification.currentChannelId(context))
@@ -92,12 +94,41 @@ public class NotificationReceivedEvent {
                             BaseErrorHandler.handle(e);
                         }
 
-                        if (image != null) {
+                        if (communication != null && avatar != null) {
+                            // Conversation rendering: the sender's name/avatar replace the
+                            // title/large-icon slots (MessagingStyle owns those). A big picture
+                            // cannot be combined with MessagingStyle, so `imageUrl` is ignored
+                            // for chat-style pushes.
+                            Person sender = new Person.Builder()
+                                    .setName(communication.senderName)
+                                    .setIcon(IconCompat.createWithBitmap(avatar))
+                                    .build();
+                            NotificationCompat.MessagingStyle messagingStyle = new NotificationCompat.MessagingStyle(sender)
+                                    .addMessage(flarelaneNotification.body, System.currentTimeMillis(), sender);
+                            builder = builder.setStyle(messagingStyle);
+                        } else if (image != null) {
                             builder = builder
                                     .setLargeIcon(image)
                                     .setStyle(new NotificationCompat.BigPictureStyle().bigPicture(image).bigLargeIcon(null).setSummaryText(flarelaneNotification.body));
                         } else {
                             builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
+                        }
+
+                        // Opt-in grouping: only pushes that explicitly carry threadId are grouped
+                        // (industry default — no key means the OS's own auto-bundling applies).
+                        // Android requires a summary sibling for custom groups; it is refreshed
+                        // after notify() below and on every dismiss/click.
+                        String threadId = flarelaneNotification.threadId;
+                        boolean isGrouped = threadId != null && !threadId.isEmpty();
+                        if (isGrouped) {
+                            builder = builder
+                                    .setGroup(threadId)
+                                    .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
+                                    .setDeleteIntent(NotificationDismissedReceiver.buildPendingIntent(
+                                            context,
+                                            threadId,
+                                            flarelaneNotification.currentChannelId(context),
+                                            baseRequestCode));
                         }
 
                         // Action buttons — one NotificationCompat.Action per parsed button. Each
@@ -121,6 +152,11 @@ public class NotificationReceivedEvent {
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
                         notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
+
+                        if (isGrouped) {
+                            NotificationGroupManager.refreshSummary(
+                                    context, threadId, flarelaneNotification.currentChannelId(context));
+                        }
 
                         // Idempotency guard: FCM may redeliver the same message and `event.display()`
                         // can be called multiple times by a foreground handler. We need RECEIVED
@@ -163,28 +199,32 @@ public class NotificationReceivedEvent {
         return PendingIntent.getActivity(context, requestCode, clickedIntent, PendingIntent.FLAG_IMMUTABLE);
     }
 
-    @SuppressLint("DiscouragedApi")
-    private int getNotificationIcon(Context context) {
+    /** Bounded, best-effort bitmap fetch shared by the big-picture image and the sender avatar. */
+    private Bitmap downloadBitmap(String imageUrl) {
+        HttpURLConnection connection = null;
         try {
-            // TODO: Temporarily available only from Lollipop higher
-            if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-                // TODO: if notificationIcon was set (LEGACY)
-                if (FlareLane.notificationIcon != 0) {
-                    return FlareLane.notificationIcon;
-                }
-
-                // if default notification icon is exists
-                int getDefaultIconId = context.getResources().getIdentifier(Constants.ID_IC_STAT_DEFAULT, "drawable", context.getPackageName());
-                if (getDefaultIconId != 0) {
-                    return getDefaultIconId;
-                }
+            URL url = new URL(imageUrl);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(10000);
+            connection.connect();
+            try (InputStream in = connection.getInputStream()) {
+                return BitmapFactory.decodeStream(in);
             }
         } catch (Exception e) {
-            com.flarelane.BaseErrorHandler.handle(e);
+            BaseErrorHandler.handle(e);
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
+    }
 
-        // Use a system default notification icon
-        return android.R.drawable.ic_menu_info_details;
+    private int getNotificationIcon(Context context) {
+        // Shared with the group summary so children and summary always match.
+        return NotificationGroupManager.resolveSmallIcon(context);
     }
 
 }

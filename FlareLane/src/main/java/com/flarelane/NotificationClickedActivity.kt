@@ -41,6 +41,15 @@ internal class NotificationClickedActivity : Activity() {
             // Symmetric to NotificationReceivedEvent.display(): fire the CLICKED event and click
             // handler through the event wrapper, then handle the (Activity-scoped) deep link.
             NotificationClickedEvent(this.applicationContext, notification).process()
+
+            // The tap removed the child (autoCancel / explicit cancel above) — re-derive the
+            // group summary so it collapses or disappears instead of lingering as a ghost.
+            notification.threadId?.takeIf { it.isNotEmpty() }?.let { threadId ->
+                NotificationGroupManager.refreshSummary(
+                    applicationContext, threadId, notification.currentChannelId(applicationContext)
+                )
+            }
+
             handleNotificationClicked(notification)
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)

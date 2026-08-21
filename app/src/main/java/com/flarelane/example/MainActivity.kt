@@ -187,6 +187,26 @@ class MainActivity : AppCompatActivity() {
             sendBroadcast(intent)
         }
 
+        // Local test for 1.11.0 grouping + chat-style rendering without a server: each tap posts
+        // one notification with the same threadId (summary appears from the 2nd) and a
+        // communication sender (avatar bubble when the image downloads).
+        findViewById<Button>(R.id.btn_group_chat_notification).setOnClickListener {
+            val seq = System.currentTimeMillis()
+            val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
+            intent.putExtra("notificationId", "local-chat-$seq")
+            intent.putExtra("isFlareLane", true)
+            intent.putExtra("title", "김민혁")
+            intent.putExtra("body", "채팅 스타일 알림 테스트 #$seq")
+            intent.putExtra("data", "{}")
+            intent.putExtra("threadId", "chat_room_1")
+            intent.putExtra(
+                "communication",
+                "{\"senderName\":\"김민혁\",\"senderImageUrl\":\"https://picsum.photos/200\"}"
+            )
+            intent.putExtra("from", "0")
+            sendBroadcast(intent)
+        }
+
         findViewById<Button>(R.id.btn_in_app_message).setOnClickListener {
             val data = JSONObject()
             data.put("d1", 27)

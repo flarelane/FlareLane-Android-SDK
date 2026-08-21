@@ -25,6 +25,10 @@ data class Notification @JvmOverloads constructor(
     // visible to Java so a `new Notification(id, body, data, title, url, imageUrl)` call
     // from an older host app still resolves.
     @JvmField val buttons: String? = null,
+    // Notification-grouping key (iOS thread-id counterpart); raw string from the payload.
+    @JvmField val threadId: String? = null,
+    // Chat-style sender payload; raw JSON string like `buttons`, parsed lazily below.
+    @JvmField val communication: String? = null,
     @JvmField val clickedButtonIndex: Int? = null
 ) : Parcelable, InteractionClass {
     constructor(jsonObject: JSONObject) : this(
@@ -34,7 +38,9 @@ data class Notification @JvmOverloads constructor(
         if (jsonObject.has("title")) jsonObject.getString("title") else null,
         if (jsonObject.has("url")) jsonObject.getString("url") else null,
         if (jsonObject.has("imageUrl")) jsonObject.getString("imageUrl") else null,
-        if (jsonObject.has("buttons")) jsonObject.getString("buttons") else null
+        if (jsonObject.has("buttons")) jsonObject.getString("buttons") else null,
+        if (jsonObject.has("threadId")) jsonObject.getString("threadId").takeIf { it.isNotEmpty() } else null,
+        if (jsonObject.has("communication")) jsonObject.getString("communication") else null
     )
 
     @IgnoredOnParcel
@@ -65,6 +71,22 @@ data class Notification @JvmOverloads constructor(
             }
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    /** Parsed chat-style sender, or null when the payload has none or misses a required field
+     *  (both senderName and senderImageUrl are required — see [NotificationCommunication]).
+     *  Malformed JSON never throws; it falls back to a normal notification. */
+    @IgnoredOnParcel
+    val communicationData: NotificationCommunication? by lazy {
+        if (communication.isNullOrEmpty()) return@lazy null
+        try {
+            val obj = JSONObject(communication)
+            val senderName = obj.optString("senderName").takeIf { it.isNotEmpty() } ?: return@lazy null
+            val senderImageUrl = obj.optString("senderImageUrl").takeIf { it.isNotEmpty() } ?: return@lazy null
+            NotificationCommunication(senderName, senderImageUrl)
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -109,6 +131,13 @@ data class Notification @JvmOverloads constructor(
             it["buttons"] = buttonList.map { btn ->
                 hashMapOf<String, Any?>("label" to btn.label, "link" to btn.link)
             }
+            it["threadId"] = threadId
+            it["communication"] = communicationData?.let { comm ->
+                hashMapOf<String, Any?>(
+                    "senderName" to comm.senderName,
+                    "senderImageUrl" to comm.senderImageUrl
+                )
+            }
             it["clickedButtonIndex"] = clickedButtonIndex
             it["clickedButton"] = clicked?.let { btn ->
                 hashMapOf<String, Any?>("label" to btn.label, "link" to btn.link)
@@ -126,6 +155,8 @@ data class Notification @JvmOverloads constructor(
             it.putString("imageUrl", imageUrl)
             it.putString("data", data)
             it.putString("buttons", buttons)
+            it.putString("threadId", threadId)
+            it.putString("communication", communication)
             clickedButtonIndex?.let { idx -> it.putInt("clickedButtonIndex", idx) }
         }
     }
