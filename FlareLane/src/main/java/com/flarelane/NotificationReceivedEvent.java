@@ -110,6 +110,27 @@ public class NotificationReceivedEvent {
                             BaseErrorHandler.handle(e);
                         }
 
+                        // Opt-in grouping: only pushes that explicitly carry threadId are grouped
+                        // (industry default — no key means the OS's own auto-bundling applies).
+                        // Android requires a summary sibling for custom groups; it is refreshed
+                        // after notify() below and on every dismiss/click.
+                        String threadId = flarelaneNotification.threadId;
+                        // Conversations opt out of group/summary: OEM shades pull shortcut-backed
+                        // conversations into their own section, so the summary would orphan.
+                        // Their stacking comes from the shared conversation notification id above.
+                        boolean isGrouped = threadId != null && !threadId.isEmpty() && !isConversation;
+
+                        // Concurrent FCM deliveries for the same conversation must not interleave
+                        // between reading the live MessagingStyle history and re-posting it, or one
+                        // delivery's message overwrites the other's. The lock is held from the
+                        // history read through notify() below; non-conversation pushes skip it.
+                        java.util.concurrent.locks.ReentrantLock conversationLock = null;
+                        if (isConversation) {
+                            conversationLock = conversationLockFor(conversationNotificationId);
+                            conversationLock.lock();
+                        }
+                        try {
+
                         if (isConversation) {
                             // Conversation rendering: the sender's name replaces the title and
                             // the avatar fills BOTH the Person icon (expanded message row) and
@@ -176,15 +197,6 @@ public class NotificationReceivedEvent {
                             builder = builder.setStyle(new NotificationCompat.BigTextStyle().bigText(flarelaneNotification.body));
                         }
 
-                        // Opt-in grouping: only pushes that explicitly carry threadId are grouped
-                        // (industry default — no key means the OS's own auto-bundling applies).
-                        // Android requires a summary sibling for custom groups; it is refreshed
-                        // after notify() below and on every dismiss/click.
-                        String threadId = flarelaneNotification.threadId;
-                        // Conversations opt out of group/summary: OEM shades pull shortcut-backed
-                        // conversations into their own section, so the summary would orphan.
-                        // Their stacking comes from the shared conversation notification id above.
-                        boolean isGrouped = threadId != null && !threadId.isEmpty() && !isConversation;
                         if (isGrouped) {
                             builder = builder
                                     .setGroup(threadId)
@@ -218,6 +230,12 @@ public class NotificationReceivedEvent {
                         notificationManager.notify(
                                 isConversation ? conversationNotificationId : flarelaneNotification.currentAndroidNotificationId(),
                                 notification);
+
+                        } finally {
+                            if (conversationLock != null) {
+                                conversationLock.unlock();
+                            }
+                        }
 
                         if (isGrouped) {
                             NotificationGroupManager.refreshSummary(
@@ -263,6 +281,16 @@ public class NotificationReceivedEvent {
                 .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         ExtensionsKt.putParcelableDataClass(clickedIntent, flarelaneNotification);
         return PendingIntent.getActivity(context, requestCode, clickedIntent, PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** Per-conversation locks so concurrent deliveries append to the MessagingStyle history
+     *  atomically. Keyed by the stable conversation notification id; entries are tiny and the
+     *  set of live conversations is small, so no eviction is needed. */
+    private static final java.util.concurrent.ConcurrentHashMap<Integer, java.util.concurrent.locks.ReentrantLock> conversationLocks =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    private static java.util.concurrent.locks.ReentrantLock conversationLockFor(int conversationNotificationId) {
+        return conversationLocks.computeIfAbsent(conversationNotificationId, key -> new java.util.concurrent.locks.ReentrantLock());
     }
 
     /** Hard cap on downloaded image bytes; larger payloads fall back to a text-only notification. */

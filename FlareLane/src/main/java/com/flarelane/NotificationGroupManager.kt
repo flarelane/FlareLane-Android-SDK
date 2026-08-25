@@ -18,15 +18,16 @@ import kotlin.math.absoluteValue
  * bug class other push SDKs shipped fixes for).
  */
 internal object NotificationGroupManager {
-    // Summaries are addressed by (tag = threadId, fixed id): a hashCode-derived id could collide
-    // between two different threadIds and let one group overwrite/cancel the other's summary.
     private const val SUMMARY_ID_PREFIX = "flarelane_summary_"
 
     /** Plain-id summaries (no tag): some OEM shades fail to visually merge groups whose
-     *  summary is posted under a notification tag. */
+     *  summary is posted under a notification tag. hashCode-derived like every other
+     *  notification id in this SDK; a cross-thread collision is astronomically unlikely
+     *  and only cosmetic. */
     @JvmStatic
     fun summaryNotificationId(threadId: String): Int =
         (SUMMARY_ID_PREFIX + threadId).hashCode().absoluteValue
+
     private const val MAX_SUMMARY_LINES = 5
 
     /** A summary only makes sense once two or more children are visible. */
