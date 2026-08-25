@@ -80,8 +80,6 @@ class NotificationThreadCommunicationTest {
         assertEquals("https://x/a.png", bridged?.get("senderImageUrl"))
     }
 
-    // MARK: group summary decisions (pure logic of NotificationGroupManager)
-
     @Test
     fun `pre 1_11 eight-arg constructor still maps clickedButtonIndex`() {
         // Binary-compat shim: the old (…, clickedButtonIndex) signature must keep resolving.
@@ -91,6 +89,8 @@ class NotificationThreadCommunicationTest {
         assertNull(notification.threadId)
         assertNull(notification.communicationData)
     }
+
+    // MARK: group summary decisions (pure logic of NotificationGroupManager)
 
     @Test
     fun `summary shows from two children`() {

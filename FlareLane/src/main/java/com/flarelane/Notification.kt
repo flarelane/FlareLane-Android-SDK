@@ -25,25 +25,16 @@ data class Notification @JvmOverloads constructor(
     // visible to Java so a `new Notification(id, body, data, title, url, imageUrl)` call
     // from an older host app still resolves.
     @JvmField val buttons: String? = null,
+    @JvmField val clickedButtonIndex: Int? = null,
+    // New fields are APPENDED so the @Parcelize field order keeps the pre-1.11.0 prefix: a
+    // notification posted by an older SDK and tapped after the app updates unparcels its
+    // known fields correctly and reads the trailing new ones as null. (@JvmOverloads also
+    // regenerates the pre-1.11.0 8-arg constructor for already-compiled callers.)
     // Notification-grouping key (iOS thread-id counterpart); raw string from the payload.
     @JvmField val threadId: String? = null,
     // Chat-style sender payload; raw JSON string like `buttons`, parsed lazily below.
-    @JvmField val communication: String? = null,
-    @JvmField val clickedButtonIndex: Int? = null
+    @JvmField val communication: String? = null
 ) : Parcelable, InteractionClass {
-    // Restores the pre-1.11.0 8-arg JVM signature (..., clickedButtonIndex last) that the new
-    // threadId/communication parameters displaced, so already-compiled callers keep linking.
-    constructor(
-        id: String,
-        body: String,
-        data: String?,
-        title: String?,
-        url: String?,
-        imageUrl: String?,
-        buttons: String?,
-        clickedButtonIndex: Int?
-    ) : this(id, body, data, title, url, imageUrl, buttons, null, null, clickedButtonIndex)
-
     constructor(jsonObject: JSONObject) : this(
         jsonObject.getString("notificationId"),
         jsonObject.getString("body"),
@@ -54,10 +45,10 @@ data class Notification @JvmOverloads constructor(
         if (jsonObject.has("buttons")) jsonObject.getString("buttons") else null,
         // isNull guard: an explicit JSON null would make getString return the literal
         // string "null", which would then act as a bogus grouping key.
-        if (jsonObject.has("threadId") && !jsonObject.isNull("threadId")) {
+        threadId = if (jsonObject.has("threadId") && !jsonObject.isNull("threadId")) {
             jsonObject.getString("threadId").takeIf { it.isNotEmpty() }
         } else null,
-        if (jsonObject.has("communication") && !jsonObject.isNull("communication")) {
+        communication = if (jsonObject.has("communication") && !jsonObject.isNull("communication")) {
             jsonObject.getString("communication")
         } else null
     )
@@ -180,15 +171,16 @@ data class Notification @JvmOverloads constructor(
         }
     }
 
+    /** Conversation identity for chat-style pushes: threadId when present, else this
+     *  notification's own id (each push becomes its own single-message conversation). */
+    fun conversationKey(): String = threadId?.takeIf { it.isNotEmpty() } ?: id
+
     /** Stable android notification id for chat-style pushes: every push in the same
-     *  conversation (threadId, falling back to this notification's id) reuses one id so
-     *  messages stack messenger-style instead of piling up. hashCode-derived, same as
-     *  [currentAndroidNotificationId]: a cross-conversation collision is astronomically
-     *  unlikely and only cosmetic (two chats merging), so no persistent id registry. */
-    fun conversationNotificationId(): Int {
-        val key = threadId?.takeIf { it.isNotEmpty() } ?: id
-        return ("flarelane_conversation_$key").hashCode().absoluteValue
-    }
+     *  conversation reuses one id so messages stack messenger-style instead of piling up.
+     *  hashCode-derived, same as [currentAndroidNotificationId]: a cross-conversation
+     *  collision is astronomically unlikely and only cosmetic (two chats merging). */
+    fun conversationNotificationId(): Int =
+        ("flarelane_conversation_" + conversationKey()).hashCode().absoluteValue
 
     fun currentAndroidNotificationId(): Int {
         val notificationId = dataJsonObject?.optString(Constants.NOTIFICATION_ID)

@@ -1,6 +1,5 @@
 package com.flarelane;
 
-import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -25,8 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Date;
-import java.util.Random;
 
 public class NotificationReceivedEvent {
     private Context context;
@@ -62,8 +59,6 @@ public class NotificationReceivedEvent {
                         int baseRequestCode = flarelaneNotification.currentAndroidNotificationId();
                         PendingIntent contentIntent = buildClickedPendingIntent(context, flarelaneNotification, baseRequestCode);
 
-                        int currentIcon = context.getPackageManager().getApplicationInfo(context.getPackageName(), PackageManager.GET_META_DATA).icon;
-
                         Bitmap image = null;
                         if (flarelaneNotification.imageUrl != null) {
                             image = downloadBitmap(flarelaneNotification.imageUrl);
@@ -76,7 +71,9 @@ public class NotificationReceivedEvent {
                         NotificationCommunication communication = flarelaneNotification.getCommunicationData();
                         Bitmap avatar = null;
                         if (communication != null) {
-                            avatar = downloadBitmap(communication.senderImageUrl);
+                            // Tighter cap than big pictures: every retained chat message holds its
+                            // own sender icon, so large avatars multiply across the history.
+                            avatar = downloadBitmap(communication.senderImageUrl, MAX_AVATAR_DIMENSION);
                         }
                         boolean isConversation = communication != null && avatar != null;
 
@@ -85,9 +82,7 @@ public class NotificationReceivedEvent {
                         // notification id and appends to the existing MessagingStyle history —
                         // group/summary machinery doesn't apply because OEM shades pull
                         // shortcut-backed conversations out into their own section.
-                        String conversationKey = flarelaneNotification.threadId != null && !flarelaneNotification.threadId.isEmpty()
-                                ? flarelaneNotification.threadId
-                                : flarelaneNotification.id;
+                        String conversationKey = flarelaneNotification.conversationKey();
                         int conversationNotificationId = flarelaneNotification.conversationNotificationId();
 
                         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -132,20 +127,16 @@ public class NotificationReceivedEvent {
                         try {
 
                         if (isConversation) {
-                            // Conversation rendering: the sender's name replaces the title and
-                            // the avatar fills BOTH the Person icon (expanded message row) and
-                            // largeIcon — OEM shades (e.g. One UI) show largeIcon on the
-                            // collapsed row, which is what makes it read as a chat at a glance.
-                            // A big picture cannot be combined with MessagingStyle, so `imageUrl`
-                            // is ignored for chat-style pushes.
+                            // The sender's name replaces the title, and the avatar fills both the
+                            // Person icon and largeIcon (OEM collapsed rows show largeIcon). A big
+                            // picture can't combine with MessagingStyle, so `imageUrl` is ignored.
                             Person sender = new Person.Builder()
                                     .setName(communication.senderName)
                                     .setIcon(IconCompat.createWithBitmap(avatar))
                                     .build();
 
-                            // Append to the live conversation history (messenger behavior: one
-                            // notification per conversation counting up, like chat apps) instead
-                            // of stacking a new notification per push.
+                            // Messenger behavior: one notification per conversation. Append this
+                            // message to the live history if the conversation is still in the shade.
                             NotificationCompat.MessagingStyle messagingStyle = null;
                             try {
                                 for (android.service.notification.StatusBarNotification sbn : notificationManager.getActiveNotifications()) {
@@ -186,8 +177,10 @@ public class NotificationReceivedEvent {
                                     ShortcutManagerCompat.pushDynamicShortcut(context, shortcut);
                                     builder = builder.setShortcutId(shortcutId);
                                 }
-                            } catch (Exception e) {
-                                BaseErrorHandler.handle(e);
+                            } catch (Throwable t) {
+                                // Throwable: an old force-pinned androidx.core turns this into
+                                // NoSuchMethodError; a cosmetic shortcut must never crash the host.
+                                BaseErrorHandler.handle(t instanceof Exception ? (Exception) t : new Exception(t));
                             }
                         } else if (image != null) {
                             builder = builder
@@ -297,9 +290,16 @@ public class NotificationReceivedEvent {
     private static final int MAX_IMAGE_BYTES = 10 * 1024 * 1024;
     /** Decoded bitmaps are downsampled to fit this edge so a huge source can't OOM the process. */
     private static final int MAX_IMAGE_DIMENSION = 2048;
+    /** Avatars render at list-icon size; see the download call site for why this stays small. */
+    private static final int MAX_AVATAR_DIMENSION = 512;
+
+    /** Bounded, best-effort big-picture fetch (2048px decode cap). */
+    private Bitmap downloadBitmap(String imageUrl) {
+        return downloadBitmap(imageUrl, MAX_IMAGE_DIMENSION);
+    }
 
     /** Bounded, best-effort bitmap fetch shared by the big-picture image and the sender avatar. */
-    private Bitmap downloadBitmap(String imageUrl) {
+    private Bitmap downloadBitmap(String imageUrl, int maxDimension) {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(imageUrl);
@@ -338,8 +338,8 @@ public class NotificationReceivedEvent {
 
             BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
             decodeOptions.inSampleSize = 1;
-            while (boundsOptions.outWidth / decodeOptions.inSampleSize > MAX_IMAGE_DIMENSION
-                    || boundsOptions.outHeight / decodeOptions.inSampleSize > MAX_IMAGE_DIMENSION) {
+            while (boundsOptions.outWidth / decodeOptions.inSampleSize > maxDimension
+                    || boundsOptions.outHeight / decodeOptions.inSampleSize > maxDimension) {
                 decodeOptions.inSampleSize *= 2;
             }
 

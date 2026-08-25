@@ -23,16 +23,11 @@ class MainActivity : AppCompatActivity() {
     private val context: Context = this
     private var isSetTags: Boolean = false
     private var isSetUserAttributes: Boolean = false
-    private var isSubscribedState: Boolean = false
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        // Seed toggle states from the persisted SDK values so the button labels
-        // reflect reality on launch, instead of a stale `false` default.
-        isSubscribedState = FlareLane.isSubscribed(context)
 
 //        askNotificationPermission();
         FirebaseMessaging.getInstance().token
@@ -139,14 +134,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btn_subscribe).setOnClickListener {
             FlareLane.subscribe(context, true) { subscribed ->
                 Log.d("FlareLane", "subscribe(): $subscribed")
-                isSubscribedState = subscribed
             }
         }
 
         findViewById<Button>(R.id.btn_unsubscribe).setOnClickListener {
             FlareLane.unsubscribe(context) { subscribed ->
                 Log.d("FlareLane", "unsubscribe(): $subscribed")
-                isSubscribedState = subscribed
             }
         }
 

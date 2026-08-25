@@ -3,7 +3,6 @@ package com.flarelane
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import kotlin.math.absoluteValue
 
@@ -121,16 +120,14 @@ internal object NotificationGroupManager {
     @JvmStatic
     fun resolveSmallIcon(context: Context): Int {
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                if (FlareLane.notificationIcon != 0) {
-                    return FlareLane.notificationIcon
-                }
-                val defaultIconId = context.resources.getIdentifier(
-                    Constants.ID_IC_STAT_DEFAULT, "drawable", context.packageName
-                )
-                if (defaultIconId != 0) {
-                    return defaultIconId
-                }
+            if (FlareLane.notificationIcon != 0) {
+                return FlareLane.notificationIcon
+            }
+            val defaultIconId = context.resources.getIdentifier(
+                Constants.ID_IC_STAT_DEFAULT, "drawable", context.packageName
+            )
+            if (defaultIconId != 0) {
+                return defaultIconId
             }
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
