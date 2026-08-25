@@ -20,7 +20,13 @@ import kotlin.math.absoluteValue
 internal object NotificationGroupManager {
     // Summaries are addressed by (tag = threadId, fixed id): a hashCode-derived id could collide
     // between two different threadIds and let one group overwrite/cancel the other's summary.
-    private const val SUMMARY_NOTIFICATION_ID = 758293471
+    private const val SUMMARY_ID_PREFIX = "flarelane_summary_"
+
+    /** Plain-id summaries (no tag): some OEM shades fail to visually merge groups whose
+     *  summary is posted under a notification tag. */
+    @JvmStatic
+    fun summaryNotificationId(threadId: String): Int =
+        (SUMMARY_ID_PREFIX + threadId).hashCode().absoluteValue
     private const val MAX_SUMMARY_LINES = 5
 
     /** A summary only makes sense once two or more children are visible. */
@@ -61,7 +67,7 @@ internal object NotificationGroupManager {
             if (!shouldShowSummary(children.size)) {
                 // Covers both "single child left" (child stands alone again) and "group emptied"
                 // (no ghost summary lingering after the user cleared every child).
-                manager.cancel(threadId, SUMMARY_NOTIFICATION_ID)
+                manager.cancel(summaryNotificationId(threadId))
                 return
             }
 
@@ -98,7 +104,7 @@ internal object NotificationGroupManager {
                 .setAutoCancel(true)
             contentIntent?.let { builder.setContentIntent(it) }
 
-            manager.notify(threadId, SUMMARY_NOTIFICATION_ID, builder.build())
+            manager.notify(summaryNotificationId(threadId), builder.build())
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
         }

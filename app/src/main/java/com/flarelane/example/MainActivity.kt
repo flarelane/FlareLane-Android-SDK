@@ -134,27 +134,19 @@ class MainActivity : AppCompatActivity() {
             Log.d("FlareLane", "isSubscribed(): $isSubscribed")
         }
 
-        val subscribeButton = findViewById<Button>(R.id.subscribeButton)
-        subscribeButton.text = "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-        subscribeButton.setOnClickListener {
-            if (!isSubscribedState) {
-                FlareLane.subscribe(context, true) { subscribed ->
-                    Log.d("FlareLane", "subscribe(): $subscribed")
-                    isSubscribedState = subscribed
-                    runOnUiThread {
-                        subscribeButton.text =
-                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-                    }
-                }
-            } else {
-                FlareLane.unsubscribe(context) { subscribed ->
-                    Log.d("FlareLane", "unsubscribe(): $subscribed")
-                    isSubscribedState = subscribed
-                    runOnUiThread {
-                        subscribeButton.text =
-                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-                    }
-                }
+        // Separate buttons (not a toggle) so tests can force a known state without
+        // tracking what the previous state was.
+        findViewById<Button>(R.id.btn_subscribe).setOnClickListener {
+            FlareLane.subscribe(context, true) { subscribed ->
+                Log.d("FlareLane", "subscribe(): $subscribed")
+                isSubscribedState = subscribed
+            }
+        }
+
+        findViewById<Button>(R.id.btn_unsubscribe).setOnClickListener {
+            FlareLane.unsubscribe(context) { subscribed ->
+                Log.d("FlareLane", "unsubscribe(): $subscribed")
+                isSubscribedState = subscribed
             }
         }
 

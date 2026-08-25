@@ -52,8 +52,14 @@ data class Notification @JvmOverloads constructor(
         if (jsonObject.has("url")) jsonObject.getString("url") else null,
         if (jsonObject.has("imageUrl")) jsonObject.getString("imageUrl") else null,
         if (jsonObject.has("buttons")) jsonObject.getString("buttons") else null,
-        if (jsonObject.has("threadId")) jsonObject.getString("threadId").takeIf { it.isNotEmpty() } else null,
-        if (jsonObject.has("communication")) jsonObject.getString("communication") else null
+        // isNull 가드: 명시적 JSON null 이 오면 getString 이 문자열 "null" 을 돌려줘
+        // 엉뚱한 그룹키("null")가 생길 수 있다.
+        if (jsonObject.has("threadId") && !jsonObject.isNull("threadId")) {
+            jsonObject.getString("threadId").takeIf { it.isNotEmpty() }
+        } else null,
+        if (jsonObject.has("communication") && !jsonObject.isNull("communication")) {
+            jsonObject.getString("communication")
+        } else null
     )
 
     @IgnoredOnParcel
@@ -172,6 +178,14 @@ data class Notification @JvmOverloads constructor(
             it.putString("communication", communication)
             clickedButtonIndex?.let { idx -> it.putInt("clickedButtonIndex", idx) }
         }
+    }
+
+    /** Stable android notification id for chat-style pushes: every push in the same
+     *  conversation (threadId, falling back to this notification's id) reuses one id so
+     *  messages stack messenger-style instead of piling up. */
+    fun conversationNotificationId(): Int {
+        val key = threadId?.takeIf { it.isNotEmpty() } ?: id
+        return ("flarelane_conversation_$key").hashCode().absoluteValue
     }
 
     fun currentAndroidNotificationId(): Int {

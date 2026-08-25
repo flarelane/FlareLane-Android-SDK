@@ -62,6 +62,12 @@ internal class NotificationClickedActivity : Activity() {
         try {
             val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
             manager?.cancel(notification.currentAndroidNotificationId())
+            // Chat-style pushes are posted under the stable conversation id instead (only when
+            // the avatar download succeeded, which this side can't know) — cancel both
+            // candidates; cancelling an absent id is a no-op.
+            if (notification.communicationData != null) {
+                manager?.cancel(notification.conversationNotificationId())
+            }
         } catch (e: Exception) {
             BaseErrorHandler.handle(e)
         }

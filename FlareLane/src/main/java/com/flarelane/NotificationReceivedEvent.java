@@ -13,6 +13,8 @@ import android.os.Build;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.Person;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
 import com.flarelane.util.ExtensionsKt;
@@ -76,6 +78,19 @@ public class NotificationReceivedEvent {
                         if (communication != null) {
                             avatar = downloadBitmap(communication.senderImageUrl);
                         }
+                        boolean isConversation = communication != null && avatar != null;
+
+                        // Conversations stack messenger-style: every push in the same conversation
+                        // (threadId, falling back to per-notification id) reuses ONE stable android
+                        // notification id and appends to the existing MessagingStyle history —
+                        // group/summary machinery doesn't apply because OEM shades pull
+                        // shortcut-backed conversations out into their own section.
+                        String conversationKey = flarelaneNotification.threadId != null && !flarelaneNotification.threadId.isEmpty()
+                                ? flarelaneNotification.threadId
+                                : flarelaneNotification.id;
+                        int conversationNotificationId = flarelaneNotification.conversationNotificationId();
+
+                        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
                         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, flarelaneNotification.currentChannelId(context))
                                 .setSmallIcon(getNotificationIcon(context))
@@ -95,18 +110,64 @@ public class NotificationReceivedEvent {
                             BaseErrorHandler.handle(e);
                         }
 
-                        if (communication != null && avatar != null) {
-                            // Conversation rendering: the sender's name/avatar replace the
-                            // title/large-icon slots (MessagingStyle owns those). A big picture
-                            // cannot be combined with MessagingStyle, so `imageUrl` is ignored
-                            // for chat-style pushes.
+                        if (isConversation) {
+                            // Conversation rendering: the sender's name replaces the title and
+                            // the avatar fills BOTH the Person icon (expanded message row) and
+                            // largeIcon — OEM shades (e.g. One UI) show largeIcon on the
+                            // collapsed row, which is what makes it read as a chat at a glance.
+                            // A big picture cannot be combined with MessagingStyle, so `imageUrl`
+                            // is ignored for chat-style pushes.
                             Person sender = new Person.Builder()
                                     .setName(communication.senderName)
                                     .setIcon(IconCompat.createWithBitmap(avatar))
                                     .build();
-                            NotificationCompat.MessagingStyle messagingStyle = new NotificationCompat.MessagingStyle(sender)
-                                    .addMessage(flarelaneNotification.body, System.currentTimeMillis(), sender);
-                            builder = builder.setStyle(messagingStyle);
+
+                            // Append to the live conversation history (messenger behavior: one
+                            // notification per conversation counting up, like chat apps) instead
+                            // of stacking a new notification per push.
+                            NotificationCompat.MessagingStyle messagingStyle = null;
+                            try {
+                                for (android.service.notification.StatusBarNotification sbn : notificationManager.getActiveNotifications()) {
+                                    if (sbn.getId() == conversationNotificationId) {
+                                        messagingStyle = NotificationCompat.MessagingStyle
+                                                .extractMessagingStyleFromNotification(sbn.getNotification());
+                                        break;
+                                    }
+                                }
+                            } catch (Exception e) {
+                                BaseErrorHandler.handle(e);
+                            }
+                            if (messagingStyle == null) {
+                                messagingStyle = new NotificationCompat.MessagingStyle(sender);
+                            }
+                            messagingStyle.addMessage(flarelaneNotification.body, System.currentTimeMillis(), sender);
+
+                            builder = builder
+                                    .setLargeIcon(avatar)
+                                    .setStyle(messagingStyle);
+
+                            // Android 11+/OEM shades render the sender avatar as the primary icon
+                            // (the messenger-app look) only for notifications tied to a published
+                            // conversation shortcut. Push one per conversation; failure degrades
+                            // to plain MessagingStyle, never blocks the notification.
+                            try {
+                                String shortcutId = "flarelane_conversation_" + conversationKey;
+                                Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+                                if (launchIntent != null) {
+                                    launchIntent.setAction(Intent.ACTION_MAIN);
+                                    ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(context, shortcutId)
+                                            .setLongLived(true)
+                                            .setShortLabel(communication.senderName)
+                                            .setIcon(IconCompat.createWithBitmap(avatar))
+                                            .setPerson(sender)
+                                            .setIntent(launchIntent)
+                                            .build();
+                                    ShortcutManagerCompat.pushDynamicShortcut(context, shortcut);
+                                    builder = builder.setShortcutId(shortcutId);
+                                }
+                            } catch (Exception e) {
+                                BaseErrorHandler.handle(e);
+                            }
                         } else if (image != null) {
                             builder = builder
                                     .setLargeIcon(image)
@@ -120,7 +181,10 @@ public class NotificationReceivedEvent {
                         // Android requires a summary sibling for custom groups; it is refreshed
                         // after notify() below and on every dismiss/click.
                         String threadId = flarelaneNotification.threadId;
-                        boolean isGrouped = threadId != null && !threadId.isEmpty();
+                        // Conversations opt out of group/summary: OEM shades pull shortcut-backed
+                        // conversations into their own section, so the summary would orphan.
+                        // Their stacking comes from the shared conversation notification id above.
+                        boolean isGrouped = threadId != null && !threadId.isEmpty() && !isConversation;
                         if (isGrouped) {
                             builder = builder
                                     .setGroup(threadId)
@@ -151,8 +215,9 @@ public class NotificationReceivedEvent {
                         notification.defaults |= android.app.Notification.DEFAULT_LIGHTS;
                         notification.defaults |= android.app.Notification.DEFAULT_VIBRATE;
 
-                        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-                        notificationManager.notify(flarelaneNotification.currentAndroidNotificationId(), notification);
+                        notificationManager.notify(
+                                isConversation ? conversationNotificationId : flarelaneNotification.currentAndroidNotificationId(),
+                                notification);
 
                         if (isGrouped) {
                             NotificationGroupManager.refreshSummary(
