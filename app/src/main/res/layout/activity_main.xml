@@ -79,6 +79,12 @@
             android:text="WebView Test" />
 
         <Button
+            android:id="@+id/btn_log_level"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Log level (verbose)" />
+
+        <Button
             android:id="@+id/btn_url_notification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

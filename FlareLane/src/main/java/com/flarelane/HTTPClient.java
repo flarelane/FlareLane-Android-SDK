@@ -174,12 +174,12 @@ class HTTPClient {
                 sb.append(line).append('\n');
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.error("Failed to read the response stream", e);
         } finally {
             try {
                 is.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Logger.error("Failed to close the response stream", e);
             }
         }
 
