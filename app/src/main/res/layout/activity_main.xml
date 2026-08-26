@@ -55,10 +55,16 @@
             android:text="isSubscribed" />
 
         <Button
-            android:id="@+id/subscribeButton"
+            android:id="@+id/btn_subscribe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Toggle Subscribe (set)" />
+            android:text="Subscribe" />
+
+        <Button
+            android:id="@+id/btn_unsubscribe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unsubscribe" />
 
         <Button
             android:id="@+id/btn_webView_bridge_test"
@@ -77,6 +83,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Show notification with url" />
+
+        <Button
+            android:id="@+id/btn_group_chat_notification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show grouped chat notification" />
 
         <Button
             android:id="@+id/btn_in_app_message"

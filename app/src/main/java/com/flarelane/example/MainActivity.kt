@@ -23,16 +23,11 @@ class MainActivity : AppCompatActivity() {
     private val context: Context = this
     private var isSetTags: Boolean = false
     private var isSetUserAttributes: Boolean = false
-    private var isSubscribedState: Boolean = false
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        // Seed toggle states from the persisted SDK values so the button labels
-        // reflect reality on launch, instead of a stale `false` default.
-        isSubscribedState = FlareLane.isSubscribed(context)
 
 //        askNotificationPermission();
         FirebaseMessaging.getInstance().token
@@ -134,27 +129,17 @@ class MainActivity : AppCompatActivity() {
             Log.d("FlareLane", "isSubscribed(): $isSubscribed")
         }
 
-        val subscribeButton = findViewById<Button>(R.id.subscribeButton)
-        subscribeButton.text = "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-        subscribeButton.setOnClickListener {
-            if (!isSubscribedState) {
-                FlareLane.subscribe(context, true) { subscribed ->
-                    Log.d("FlareLane", "subscribe(): $subscribed")
-                    isSubscribedState = subscribed
-                    runOnUiThread {
-                        subscribeButton.text =
-                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-                    }
-                }
-            } else {
-                FlareLane.unsubscribe(context) { subscribed ->
-                    Log.d("FlareLane", "unsubscribe(): $subscribed")
-                    isSubscribedState = subscribed
-                    runOnUiThread {
-                        subscribeButton.text =
-                            "Toggle Subscribe (${if (isSubscribedState) "del" else "set"})"
-                    }
-                }
+        // Separate buttons (not a toggle) so tests can force a known state without
+        // tracking what the previous state was.
+        findViewById<Button>(R.id.btn_subscribe).setOnClickListener {
+            FlareLane.subscribe(context, true) { subscribed ->
+                Log.d("FlareLane", "subscribe(): $subscribed")
+            }
+        }
+
+        findViewById<Button>(R.id.btn_unsubscribe).setOnClickListener {
+            FlareLane.unsubscribe(context) { subscribed ->
+                Log.d("FlareLane", "unsubscribe(): $subscribed")
             }
         }
 
@@ -183,6 +168,26 @@ class MainActivity : AppCompatActivity() {
             intent.putExtra("body", "url=${testUrl}")
             intent.putExtra("url", testUrl)
             intent.putExtra("data", "{}")
+            intent.putExtra("from", "0")
+            sendBroadcast(intent)
+        }
+
+        // Local test for 1.11.0 grouping + chat-style rendering without a server: each tap posts
+        // one notification with the same threadId (summary appears from the 2nd) and a
+        // communication sender (avatar bubble when the image downloads).
+        findViewById<Button>(R.id.btn_group_chat_notification).setOnClickListener {
+            val seq = System.currentTimeMillis()
+            val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
+            intent.putExtra("notificationId", "local-chat-$seq")
+            intent.putExtra("isFlareLane", true)
+            intent.putExtra("title", "김민혁")
+            intent.putExtra("body", "채팅 스타일 알림 테스트 #$seq")
+            intent.putExtra("data", "{}")
+            intent.putExtra("threadId", "chat_room_1")
+            intent.putExtra(
+                "communication",
+                "{\"senderName\":\"김민혁\",\"senderImageUrl\":\"https://picsum.photos/200\"}"
+            )
             intent.putExtra("from", "0")
             sendBroadcast(intent)
         }

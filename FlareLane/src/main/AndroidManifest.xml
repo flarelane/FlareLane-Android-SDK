@@ -29,6 +29,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".NotificationDismissedReceiver"
+            android:exported="false" />
+
         <activity
             android:name=".NotificationClickedActivity"
             android:excludeFromRecents="true"
