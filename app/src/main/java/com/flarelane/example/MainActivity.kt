@@ -167,11 +167,12 @@ class MainActivity : AppCompatActivity() {
             FlareLane.LOG_LEVEL_NONE to "none"
         )
         var logLevelIndex = 0
-        findViewById<Button>(R.id.btn_log_level).setOnClickListener { button ->
+        val logLevelButton = findViewById<Button>(R.id.btn_log_level)
+        logLevelButton.setOnClickListener {
             logLevelIndex = (logLevelIndex + 1) % logLevels.size
             val (level, label) = logLevels[logLevelIndex]
             FlareLane.setLogLevel(level)
-            (button as Button).text = "Log level ($label)"
+            logLevelButton.text = "Log level ($label)"
         }
 
         findViewById<Button>(R.id.btn_url_notification).setOnClickListener {
@@ -215,7 +216,6 @@ class MainActivity : AppCompatActivity() {
 
             FlareLane.displayInApp(this, "home", data)
         }
-
     }
 
     // FOR FIREBASE: https://firebase.google.com/docs/cloud-messaging/android/client

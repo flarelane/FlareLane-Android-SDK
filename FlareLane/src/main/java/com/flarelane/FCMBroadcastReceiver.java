@@ -3,7 +3,6 @@ package com.flarelane;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.legacy.content.WakefulBroadcastReceiver;
 

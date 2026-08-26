@@ -22,7 +22,7 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
-        FlareLane.setLogLevel(Log.VERBOSE);
+        FlareLane.setLogLevel(FlareLane.LOG_LEVEL_VERBOSE);
         FlareLane.initWithContext(this, FLARELANE_PROJECT_ID, false);
 
         FlareLane.setNotificationClickedHandler(new NotificationClickedHandler() {
