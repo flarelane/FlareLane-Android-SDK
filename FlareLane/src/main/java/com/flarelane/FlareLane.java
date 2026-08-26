@@ -23,8 +23,19 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.0";
+        public static String version = "1.11.1";
     }
+
+    // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
+    // verbose) so existing call sites passing Log.VERBOSE / Log.ERROR keep working unchanged;
+    // these constants just give the three levels the SDK actually supports a name, matching the
+    // none / error / verbose vocabulary used by the iOS, React Native and Flutter SDKs.
+    /** Suppress every log the SDK produces. */
+    public static final int LOG_LEVEL_NONE = 10;
+    /** Failures only: caught exceptions, HTTP errors, invalid parameters. */
+    public static final int LOG_LEVEL_ERROR = android.util.Log.ERROR;
+    /** Errors plus the full operation flow. Default. */
+    public static final int LOG_LEVEL_VERBOSE = android.util.Log.VERBOSE;
 
     protected static com.flarelane.NotificationForegroundReceivedHandler notificationForegroundReceivedHandler = null;
     protected static com.flarelane.NotificationClickedHandler notificationClickedHandler = null;

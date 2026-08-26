@@ -159,6 +159,22 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // Cycles verbose -> error -> none so the level gate can be checked on a device:
+        // at "none" the SDK should print nothing at all.
+        val logLevels = listOf(
+            FlareLane.LOG_LEVEL_VERBOSE to "verbose",
+            FlareLane.LOG_LEVEL_ERROR to "error",
+            FlareLane.LOG_LEVEL_NONE to "none"
+        )
+        var logLevelIndex = 0
+        val logLevelButton = findViewById<Button>(R.id.btn_log_level)
+        logLevelButton.setOnClickListener {
+            logLevelIndex = (logLevelIndex + 1) % logLevels.size
+            val (level, label) = logLevels[logLevelIndex]
+            FlareLane.setLogLevel(level)
+            logLevelButton.text = "Log level ($label)"
+        }
+
         findViewById<Button>(R.id.btn_url_notification).setOnClickListener {
             val testUrl = "https://www.google.com"
             val intent = Intent("com.google.android.c2dm.intent.RECEIVE")
@@ -200,8 +216,6 @@ class MainActivity : AppCompatActivity() {
 
             FlareLane.displayInApp(this, "home", data)
         }
-
-        FlareLane.displayInApp(this, "home");
     }
 
     // FOR FIREBASE: https://firebase.google.com/docs/cloud-messaging/android/client
