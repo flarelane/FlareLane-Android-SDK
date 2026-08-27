@@ -16,7 +16,13 @@ import java.util.Collections
  */
 class StubServer(private vararg val scripted: Reply) {
 
+    /** [DROP_CONNECTION] as status slams the socket shut without an HTTP response — the
+     *  airplane-mode shape: the client sees an IOException and no status code at all. */
     data class Reply(val status: Int, val body: String = """{"data":{}}""", val delayMs: Long = 0)
+
+    companion object {
+        const val DROP_CONNECTION = 0
+    }
 
     data class Recorded(val method: String, val path: String, val body: String)
 
@@ -78,6 +84,11 @@ class StubServer(private vararg val scripted: Reply) {
         val reply = scripted.getOrElse(index) { scripted.last() }
         if (reply.delayMs > 0) {
             Thread.sleep(reply.delayMs)
+        }
+
+        if (reply.status == DROP_CONNECTION) {
+            client.close()
+            return
         }
 
         val payload = reply.body.toByteArray()

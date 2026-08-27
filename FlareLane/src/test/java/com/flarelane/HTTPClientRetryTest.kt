@@ -114,6 +114,24 @@ class HTTPClientRetryTest {
         assertEquals("a non-idempotent request must fail on the first attempt", 1, server.requests.size)
     }
 
+    /**
+     * The airplane-mode shape end to end: the connection dies without any HTTP
+     * response (status -1), the retry fires, and the next attempt delivers.
+     */
+    @Test
+    fun `a dropped connection is retried and succeeds`() {
+        server = StubServer(
+            StubServer.Reply(StubServer.DROP_CONNECTION),
+            StubServer.Reply(200)
+        ).also { it.start() }
+
+        val outcome = post()
+
+        assertEquals("caller should see success", 200, outcome.successCode)
+        assertEquals("exactly one callback", 1, outcome.totalCallbacks)
+        assertEquals("request should have gone out twice", 2, server.requests.size)
+    }
+
     @Test
     fun `a retry sends the exact same body`() {
         server = StubServer(StubServer.Reply(500), StubServer.Reply(200)).also { it.start() }
