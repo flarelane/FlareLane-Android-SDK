@@ -145,6 +145,9 @@ class TaskQueueManager {
         // Reset processing state
         isProcessing = false;
         isInitialized = false;
+        // Deliberately lifted here: reset() is the explicit re-initialization entry
+        // point (resetDevice / a new projectId), which must be allowed to try again.
+        // If the project is still gone, the very next registration's 410 re-stops.
         isStopped = false;
 
         // Cancel any pending timeout

@@ -133,6 +133,11 @@ class HTTPClient {
                             // with LOG_LEVEL_NONE, which suppresses every line the SDK emits.
                             com.flarelane.Logger.verbose("HTTP " + method + " body: " + body.toString());
                         }
+                        // Re-clamped after connect: the connect phase may have spent part of
+                        // the budget, and the read timeout set before it still held the full
+                        // remainder. The 1s floor can overshoot the deadline by at most a second
+                        // — a floor of 0 would mean "wait forever" on this API.
+                        conn.setReadTimeout((int) Math.min(READ_TIMEOUT_MS, Math.max(1000, deadline - System.currentTimeMillis())));
                         responseCode = conn.getResponseCode();
                         responseJson = readBody(conn, responseCode);
                     } catch (Exception e) {
