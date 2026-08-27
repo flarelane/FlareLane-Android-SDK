@@ -102,11 +102,12 @@ internal object EventService {
         val subjectType = if (userId != null) "user" else "device"
         val subjectId = userId ?: deviceId
 
-        // Dedup key, separate from the server-owned record id: a retried request
+        // Insert id — the client-generated dedup key (the industry-standard name
+        // for it), separate from the server-owned record id: a retried request
         // carries the same body, so the backend can recognise a resend whose
         // response was lost.
         val event = JSONObject()
-            .put("clientEventId", UUID.randomUUID().toString())
+            .put("insertId", UUID.randomUUID().toString())
             .put("type", type)
             .put("subjectType", subjectType)
             .put("subjectId", subjectId)
