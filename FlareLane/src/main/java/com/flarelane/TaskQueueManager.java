@@ -32,6 +32,14 @@ class TaskQueueManager {
 
     // Add a task to the queue. If initialized, execute it immediately.
     public synchronized void addTask(NamedRunnable task) {
+        // Every call site hands over a fresh instance. Re-adding one that is already queued or
+        // running would overwrite its completion callback, letting a late completion from the
+        // first run finish the second one early — refuse it outright.
+        if (task == currentTask || taskQueue.contains(task)) {
+            Logger.error("Task instance already queued or running, ignored: " + task.getTaskName());
+            return;
+        }
+
         taskQueue.add(task);
         Logger.verbose("Task added to queue: " + task.getTaskName() + ". Queue size after adding: " + taskQueue.size());
 
