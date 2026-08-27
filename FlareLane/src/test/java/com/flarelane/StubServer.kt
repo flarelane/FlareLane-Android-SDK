@@ -14,6 +14,8 @@ import java.util.Collections
  * Replies are consumed one per request. Past the end of the script the last entry repeats, so a
  * test only spells out the replies it cares about.
  */
+// Callers always script at least one reply — an empty stub server has no meaning,
+// so the constructor stays free of defensive checks on purpose.
 class StubServer(private vararg val scripted: Reply) {
 
     /** [DROP_CONNECTION] as status slams the socket shut without an HTTP response — the
