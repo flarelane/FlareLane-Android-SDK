@@ -15,7 +15,7 @@ class RemoteParamsManager {
 
         HTTPClient.get("internal/v1/projects/" + projectId + "/remote-params", new HTTPClient.ResponseHandler() {
             @Override
-            void onSuccess(int responseCode, JSONObject response) {
+            public void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
 
                 try {

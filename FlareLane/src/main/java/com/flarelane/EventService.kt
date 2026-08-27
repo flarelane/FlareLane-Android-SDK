@@ -3,6 +3,7 @@ package com.flarelane
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 internal object EventService {
     @JvmField
@@ -101,7 +102,10 @@ internal object EventService {
         val subjectType = if (userId != null) "user" else "device"
         val subjectId = userId ?: deviceId
 
+        // Idempotency key. A retried request carries the same body, so the backend can recognise
+        // a redelivery of an event it already stored and count it once.
         val event = JSONObject()
+            .put("id", UUID.randomUUID().toString())
             .put("type", type)
             .put("subjectType", subjectType)
             .put("subjectId", subjectId)

@@ -69,7 +69,7 @@ class DeviceService {
     static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
         HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
             @Override
-            void onSuccess(int responseCode, JSONObject response) {
+            public void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
 
                 try {
@@ -92,7 +92,7 @@ class DeviceService {
 
         HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
             @Override
-            void onSuccess(int responseCode, JSONObject response) {
+            public void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
 
                 try {
@@ -138,13 +138,13 @@ class DeviceService {
 
         HTTPClient.patch("internal/v1/projects/" + projectId + "/user-attributes", body, new HTTPClient.ResponseHandler() {
             @Override
-            void onSuccess(int responseCode, JSONObject response) {
+            public void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
                 if (onComplete != null) onComplete.run();
             }
 
             @Override
-            void onFailure(int responseCode, JSONObject response) {
+            public void onFailure(int responseCode, JSONObject response) {
                 super.onFailure(responseCode, response);
                 if (onComplete != null) onComplete.run();
             }
