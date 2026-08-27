@@ -16,6 +16,19 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 class DeviceService {
+    /**
+     * 410 from a device endpoint means this project or device is gone for the
+     * rest of this app run, so the SDK stops queueing and sending. Only these
+     * two endpoints carry that meaning — a 410 from any other endpoint must
+     * never be able to shut the SDK down.
+     */
+    static void stopSdkIfGone(int responseCode) { // package-private for direct spec coverage
+        if (responseCode != 410) return;
+
+        Logger.error("Device endpoint returned 410, stopping the SDK until the next app launch.");
+        TaskQueueManager.getInstance().stop();
+    }
+
     static JSONObject getSystemInfo(Context context) throws Exception {
         JSONObject data = new JSONObject();
         data.put("platform", Constants.SDK_PLATFORM);
@@ -69,6 +82,12 @@ class DeviceService {
     static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
         HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
             @Override
+            void onFailure(int responseCode, JSONObject response) {
+                super.onFailure(responseCode, response);
+                stopSdkIfGone(responseCode);
+            }
+
+            @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
 
@@ -91,6 +110,12 @@ class DeviceService {
         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
         HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
+            @Override
+            void onFailure(int responseCode, JSONObject response) {
+                super.onFailure(responseCode, response);
+                stopSdkIfGone(responseCode);
+            }
+
             @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
