@@ -130,7 +130,10 @@ public class FlareLane {
                     com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
                         @Override
                         public void onSuccess(com.flarelane.Device device) {
-                            BaseSharedPreferences.setUserId(context, device.userId);
+                            // The intended value, not the echo: the server persists before
+                            // answering, so on success the sent value is the truth — and this
+                            // stays correct even if a slow echo arrives out of order.
+                            BaseSharedPreferences.setUserId(context, userId);
                             completeTask();
                         }
                     });
