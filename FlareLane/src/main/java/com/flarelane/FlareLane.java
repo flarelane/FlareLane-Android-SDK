@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.1";
+        public static String version = "1.11.2";
     }
 
     // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
@@ -142,7 +142,8 @@ public class FlareLane {
     }
 
     public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
-        taskQueueManager.addTask(new NamedRunnable("subscribe") {
+        taskQueueManager.addTask(new NamedRunnable("subscribe",
+                () -> answerSubscriptionState(context, handler)) {
              @Override
              public void run() {
                  try {
@@ -191,7 +192,8 @@ public class FlareLane {
     }
 
     public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
-        taskQueueManager.addTask(new NamedRunnable("unsubscribe") {
+        taskQueueManager.addTask(new NamedRunnable("unsubscribe",
+                () -> answerSubscriptionState(context, handler)) {
              @Override
              public void run() {
                  try {
@@ -217,6 +219,26 @@ public class FlareLane {
                  }
              }
          });
+    }
+
+    /**
+     * Report the last known subscription state to a handler whose task will never run, because the
+     * SDK stopped before it could. The state cannot have changed, so what we know is the answer.
+     *
+     * The exception guard matters: a queued task runs inside {@link TaskQueueManager}'s try/catch,
+     * but this call does not, so an exception thrown by host-app code would reach the main looper
+     * and crash the app.
+     */
+    private static void answerSubscriptionState(Context context, @Nullable IsSubscribedHandler handler) {
+        if (handler == null) return;
+
+        mainHandler.post(() -> {
+            try {
+                handler.onSuccess(isSubscribed(context));
+            } catch (Exception e) {
+                com.flarelane.BaseErrorHandler.handle(e);
+            }
+        });
     }
 
     public static void trackEvent(Context context, String type, JSONObject data) {
