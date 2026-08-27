@@ -142,15 +142,7 @@ public class FlareLane {
     }
 
     public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
-        // Nothing will run while the SDK is stopped, so the subscription state cannot change.
-        // Answer with what we know instead of leaving the caller waiting on a result that never
-        // arrives — the Flutter and React Native bridges resolve only from inside this handler.
-        if (taskQueueManager.isStopped()) {
-            if (handler != null) mainHandler.post(() -> handler.onSuccess(isSubscribed(context)));
-            return;
-        }
-
-        taskQueueManager.addTask(new NamedRunnable("subscribe") {
+        boolean accepted = taskQueueManager.addTask(new NamedRunnable("subscribe") {
              @Override
              public void run() {
                  try {
@@ -196,18 +188,15 @@ public class FlareLane {
                  }
              }
          });
+
+        // Refused because the SDK is stopped, so the subscription state cannot change. Answer with
+        // what we know instead of leaving the caller waiting on a result that never arrives — the
+        // Flutter and React Native bridges resolve only from inside this handler.
+        if (!accepted) answerSubscriptionState(context, handler);
     }
 
     public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
-        // Nothing will run while the SDK is stopped, so the subscription state cannot change.
-        // Answer with what we know instead of leaving the caller waiting on a result that never
-        // arrives — the Flutter and React Native bridges resolve only from inside this handler.
-        if (taskQueueManager.isStopped()) {
-            if (handler != null) mainHandler.post(() -> handler.onSuccess(isSubscribed(context)));
-            return;
-        }
-
-        taskQueueManager.addTask(new NamedRunnable("unsubscribe") {
+        boolean accepted = taskQueueManager.addTask(new NamedRunnable("unsubscribe") {
              @Override
              public void run() {
                  try {
@@ -233,6 +222,30 @@ public class FlareLane {
                  }
              }
          });
+
+        // Refused because the SDK is stopped, so the subscription state cannot change. Answer with
+        // what we know instead of leaving the caller waiting on a result that never arrives — the
+        // Flutter and React Native bridges resolve only from inside this handler.
+        if (!accepted) answerSubscriptionState(context, handler);
+    }
+
+    /**
+     * Report the last known subscription state to a handler that never made it onto the queue.
+     *
+     * The exception guard matters: a queued task runs inside {@link TaskQueueManager}'s try/catch,
+     * but this call does not, so an exception thrown by host-app code would reach the main looper
+     * and crash the app.
+     */
+    private static void answerSubscriptionState(Context context, @Nullable IsSubscribedHandler handler) {
+        if (handler == null) return;
+
+        mainHandler.post(() -> {
+            try {
+                handler.onSuccess(isSubscribed(context));
+            } catch (Exception e) {
+                com.flarelane.BaseErrorHandler.handle(e);
+            }
+        });
     }
 
     public static void trackEvent(Context context, String type, JSONObject data) {

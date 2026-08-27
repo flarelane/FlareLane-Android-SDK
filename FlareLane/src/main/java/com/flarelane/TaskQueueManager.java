@@ -30,11 +30,17 @@ class TaskQueueManager {
         return instance;
     }
 
-    // Add a task to the queue. If initialized, execute it immediately.
-    public synchronized void addTask(NamedRunnable task) {
+    /**
+     * Add a task to the queue. If initialized, execute it immediately.
+     *
+     * Returns false when the SDK is stopped and the task was refused. Callers that owe the host app
+     * a result must answer it themselves in that case — deciding here keeps the check and the
+     * enqueue atomic, so a task can never be refused after a caller already saw "not stopped".
+     */
+    public synchronized boolean addTask(NamedRunnable task) {
         if (isStopped) {
             Logger.verbose("SDK is stopped, ignoring task: " + task.getTaskName());
-            return;
+            return false;
         }
 
         taskQueue.add(task);
@@ -43,6 +49,7 @@ class TaskQueueManager {
         if (isInitialized && !isProcessing) {
             processNext();
         }
+        return true;
     }
 
     // Execute a task if not already processing another task.
@@ -112,10 +119,6 @@ class TaskQueueManager {
         int discarded = taskQueue.size();
         taskQueue.clear();
         Logger.verbose("SDK stopped, task queue cleared. Pending tasks discarded: " + discarded);
-    }
-
-    synchronized boolean isStopped() {
-        return isStopped;
     }
 
     /** Visible for tests: number of tasks still waiting. */

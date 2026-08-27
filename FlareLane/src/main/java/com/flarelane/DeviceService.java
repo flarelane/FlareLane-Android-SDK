@@ -26,7 +26,7 @@ class DeviceService {
         return responseCode == 410;
     }
 
-    private static void stopSdkIfGone(int responseCode, String path) {
+    static void stopSdkIfGone(int responseCode, String path) {
         if (!isGone(responseCode)) return;
 
         Logger.error("Device endpoint returned 410, stopping the SDK until the next app launch. path: " + path);
