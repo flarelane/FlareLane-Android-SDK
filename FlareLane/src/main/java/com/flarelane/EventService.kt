@@ -123,10 +123,13 @@ internal object EventService {
 
         val body = JSONObject().put("events", JSONArray().put(event))
 
+        // Safe to retry: the event carries its own id, so a resend of a stored-but-unacknowledged
+        // event is recognised and counted once.
         HTTPClient.post(
             "internal/v1/projects/$projectId/events-v2",
             body,
-            HTTPClient.ResponseHandler()
+            HTTPClient.ResponseHandler(),
+            true
         )
     }
 }

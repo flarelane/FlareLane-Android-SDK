@@ -130,6 +130,32 @@ class HTTPClientRetryTest {
         assertEquals("a success must not be retried", 1, server.requests.size)
     }
 
+    /**
+     * A POST that reached the server but lost its response would be applied twice if resent, so
+     * only callers that declared the request idempotent enter the retry loop at all.
+     */
+    @Test
+    fun `a non-idempotent request is never retried`() {
+        server = StubServer(StubServer.Reply(503)).also { it.start() }
+
+        val outcome = post(watchMs = PAST_FIRST_BACKOFF_MS, idempotent = false)
+
+        assertEquals(503, outcome.failureCode)
+        assertEquals("a non-idempotent request must fail on the first attempt", 1, server.requests.size)
+    }
+
+    /** A 3xx means the request did not finish at this URL; the body is not what the caller asked for. */
+    @Test
+    fun `a redirect status is not a success`() {
+        server = StubServer(StubServer.Reply(300, """{"choices":[]}""")).also { it.start() }
+
+        val outcome = post(watchMs = PAST_FIRST_BACKOFF_MS)
+
+        assertEquals("must not be delivered as success", 0, outcome.successes.get())
+        assertEquals(300, outcome.failureCode)
+        assertEquals("a redirect must not be retried", 1, server.requests.size)
+    }
+
     /** Content-Length counts bytes, so a multi-byte payload must survive the round trip intact. */
     @Test
     fun `a multi-byte body is sent and retried unchanged`() {
@@ -155,7 +181,7 @@ class HTTPClientRetryTest {
 
         try {
             val done = CountDownLatch(1)
-            HTTPClient.send(server.baseUrl, "POST", "events", JSONObject(),
+            HTTPClient.send(server.baseUrl, "POST", "events", JSONObject(), true,
                 object : HTTPClient.ResponseHandler() {
                     override fun onSuccess(responseCode: Int, response: JSONObject) {
                         done.countDown()
@@ -186,7 +212,7 @@ class HTTPClientRetryTest {
         val unblock = CountDownLatch(1)
 
         repeat(BLOCKING_HANDLERS) {
-            HTTPClient.send(server.baseUrl, "POST", "blocking", JSONObject(),
+            HTTPClient.send(server.baseUrl, "POST", "blocking", JSONObject(), true,
                 object : HTTPClient.ResponseHandler() {
                     override fun onSuccess(responseCode: Int, response: JSONObject) {
                         blockedHandlersStarted.countDown()
@@ -223,11 +249,11 @@ class HTTPClientRetryTest {
      *   happened has to outlast the backoff that retry would have used, or a scheduled-but-not-yet-
      *   fired attempt slips past the assertion and is hidden by `server.stop()`.
      */
-    private fun post(body: JSONObject = JSONObject(), watchMs: Long = SETTLE_MS): Outcome {
+    private fun post(body: JSONObject = JSONObject(), watchMs: Long = SETTLE_MS, idempotent: Boolean = true): Outcome {
         val outcome = Outcome()
         val done = CountDownLatch(1)
 
-        HTTPClient.send(server.baseUrl, "POST", "events", body,
+        HTTPClient.send(server.baseUrl, "POST", "events", body, idempotent,
             object : HTTPClient.ResponseHandler() {
                 override fun onSuccess(responseCode: Int, response: JSONObject) {
                     outcome.successes.incrementAndGet()

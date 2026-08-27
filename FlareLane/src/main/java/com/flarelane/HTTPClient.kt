@@ -77,19 +77,27 @@ internal object HTTPClient {
 
     @JvmStatic
     fun get(path: String, responseHandler: ResponseHandler?) =
-        send(BASE_URL, "GET", path, null, responseHandler)
+        send(BASE_URL, "GET", path, null, idempotent = true, responseHandler = responseHandler)
 
+    /**
+     * POSTs are only retried when the caller marks them [idempotent] — a POST that reached the
+     * server but lost its response would otherwise be applied twice. Callers may opt in when the
+     * request is a read in POST clothing, or when its body carries a deduplication id the backend
+     * can recognise. GET/PATCH/DELETE are idempotent by contract here: PATCH bodies are absolute
+     * values (last-writer-wins), never increments.
+     */
     @JvmStatic
-    fun post(path: String, body: JSONObject?, responseHandler: ResponseHandler?) =
-        send(BASE_URL, "POST", path, body, responseHandler)
+    @JvmOverloads
+    fun post(path: String, body: JSONObject?, responseHandler: ResponseHandler?, idempotent: Boolean = false) =
+        send(BASE_URL, "POST", path, body, idempotent, responseHandler)
 
     @JvmStatic
     fun patch(path: String, body: JSONObject?, responseHandler: ResponseHandler?) =
-        send(BASE_URL, "PATCH", path, body, responseHandler)
+        send(BASE_URL, "PATCH", path, body, idempotent = true, responseHandler = responseHandler)
 
     @JvmStatic
     fun delete(path: String, body: JSONObject?, responseHandler: ResponseHandler?) =
-        send(BASE_URL, "DELETE", path, body, responseHandler)
+        send(BASE_URL, "DELETE", path, body, idempotent = true, responseHandler = responseHandler)
 
     /**
      * The base URL is a parameter rather than a field: the entry points above always pass the final
@@ -101,8 +109,8 @@ internal object HTTPClient {
      * would put different bytes on the wire under the same idempotency key.
      */
     @JvmStatic
-    fun send(baseUrl: String, method: String, path: String, body: JSONObject?, responseHandler: ResponseHandler?) {
-        val call = Call(baseUrl, method, path, body?.toString(), responseHandler)
+    fun send(baseUrl: String, method: String, path: String, body: JSONObject?, idempotent: Boolean, responseHandler: ResponseHandler?) {
+        val call = Call(baseUrl, method, path, body?.toString(), responseHandler, idempotent)
         try {
             executor.execute { attempt(call, 1) }
         } catch (e: RejectedExecutionException) {
@@ -121,7 +129,7 @@ internal object HTTPClient {
     private fun attempt(call: Call, attemptNo: Int) {
         val result = execute(call)
 
-        if (result.isSuccess || !RetryPolicy.shouldRetry(result.code, attemptNo)) {
+        if (result.isSuccess || !call.idempotent || !RetryPolicy.shouldRetry(result.code, attemptNo)) {
             deliver(call, result)
             return
         }
@@ -252,7 +260,9 @@ internal object HTTPClient {
             return Result(responseCode, JSONObject(), isSuccess = false)
         }
 
-        return Result(responseCode, body, isSuccess = responseCode in 200..399)
+        // 2xx only: a 3xx here means redirect following did not finish the request, and the
+        // response is not the resource the caller asked for. Matches the iOS SDK's contract.
+        return Result(responseCode, body, isSuccess = responseCode in 200..299)
     }
 
     private fun readAll(stream: InputStream): String {
@@ -309,7 +319,9 @@ internal object HTTPClient {
         val path: String,
         /** Already serialised; null for a request without a body. */
         val body: String?,
-        val responseHandler: ResponseHandler?
+        val responseHandler: ResponseHandler?,
+        /** Whether a lost-response resend is safe. Only idempotent calls enter the retry loop. */
+        val idempotent: Boolean
     ) {
         fun describe() = "$method $path"
     }

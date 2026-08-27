@@ -27,10 +27,12 @@ internal object InAppService {
             .put("group", group)
             .put("data", data)
 
+        // A read in POST clothing: fetching the message list twice is harmless, so it may retry.
         HTTPClient.post(
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages?group=$group",
             body,
-            object : ResponseHandler() {
+            idempotent = true,
+            responseHandler = object : ResponseHandler() {
                 override fun onSuccess(responseCode: Int, response: JSONObject) {
                     isDisplaying = false
                     callback.invoke(parseFirstMessage(response))

@@ -24,9 +24,13 @@ internal class RetryBudget(private val limit: Int) {
      *         starts; false when the budget is full and the request should give up now.
      */
     fun tryAcquire(): Boolean {
-        if (waiting.incrementAndGet() <= limit) return true
-        waiting.decrementAndGet()
-        return false
+        // CAS rather than increment-then-check: the transient limit+1 the latter shows a racing
+        // caller would refuse a slot that a concurrent release() had just freed.
+        while (true) {
+            val current = waiting.get()
+            if (current >= limit) return false
+            if (waiting.compareAndSet(current, current + 1)) return true
+        }
     }
 
     fun release() {

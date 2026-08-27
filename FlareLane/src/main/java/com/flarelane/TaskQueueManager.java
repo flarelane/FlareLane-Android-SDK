@@ -13,6 +13,8 @@ class TaskQueueManager {
     private boolean isInitialized = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable timeoutRunnable;
+    /** The task whose completion the queue is currently waiting for. */
+    private NamedRunnable currentTask;
 
     // Singleton instance
     private static TaskQueueManager instance;
@@ -42,20 +44,21 @@ class TaskQueueManager {
     private synchronized void executeTask(NamedRunnable task) {
         if (isProcessing) return;
         isProcessing = true;
+        currentTask = task;
         Logger.verbose("Executing task: " + task.getTaskName() + ". Queue size before execution: " + taskQueue.size());
 
         timeoutRunnable = () -> {
             synchronized (TaskQueueManager.this) {
                 if (isProcessing) {
                     Logger.verbose("Task timed out: " + task.getTaskName() + ". Processing next task.");
-                    completeTask();
+                    completeTask(task);
                 }
             }
         };
         handler.postDelayed(timeoutRunnable, TIMEOUT_MS);
 
         // Set the task completion callback
-        task.setTaskCompleteCallback(this::completeTask);
+        task.setTaskCompleteCallback(() -> completeTask(task));
 
         // Run the task
         new Thread(() -> {
@@ -63,7 +66,7 @@ class TaskQueueManager {
                 task.run();
             } catch (Exception e) {
                 Logger.error("Error executing task: " + task.getTaskName());
-                completeTask(); // Ensure completeTask is called even on error
+                completeTask(task); // Ensure completeTask is called even on error
             }
         }).start();
     }
@@ -81,8 +84,18 @@ class TaskQueueManager {
         executeTask(nextTask);
     }
 
-    // Mark the current task as complete and process the next one.
-    private synchronized void completeTask() {
+    // Mark the given task as complete and process the next one.
+    private synchronized void completeTask(NamedRunnable task) {
+        // A completion may arrive after the queue already moved on — the task timed out and its
+        // HTTP callback landed later, or a task completed twice. Acting on it would cancel the
+        // running task's timeout and advance the queue past it, so it is only acknowledged when it
+        // belongs to the task the queue is actually waiting for.
+        if (task != currentTask) {
+            Logger.verbose("Ignoring stale completion from task: " + task.getTaskName());
+            return;
+        }
+        currentTask = null;
+
         if (timeoutRunnable != null) {
             handler.removeCallbacks(timeoutRunnable);
             timeoutRunnable = null;
@@ -112,6 +125,7 @@ class TaskQueueManager {
         // Reset processing state
         isProcessing = false;
         isInitialized = false;
+        currentTask = null;
 
         // Cancel any pending timeout
         if (timeoutRunnable != null) {
