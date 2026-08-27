@@ -56,25 +56,30 @@ class HTTPClient {
     }
 
     public static void post(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        sendRequestWithBody("POST", path, body, responseHandler);
+        sendRequestWithBody(BASE_URL, "POST", path, body, responseHandler);
     }
 
     public static void patch(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        sendRequestWithBody("PATCH", path, body, responseHandler);
+        sendRequestWithBody(BASE_URL, "PATCH", path, body, responseHandler);
     }
 
     public static void delete(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        sendRequestWithBody("DELETE", path, body, responseHandler);
+        sendRequestWithBody(BASE_URL, "DELETE", path, body, responseHandler);
     }
 
-    private static void sendRequestWithBody(String method, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
+    /**
+     * The base URL is a parameter, not a mutable field: production entry points above always pass
+     * the final {@link #BASE_URL}, so live traffic cannot be redirected, while the E2E suite can aim
+     * one request at a local stub server to exercise the real socket and response-parsing path.
+     */
+    static void sendRequestWithBody(String baseUrl, String method, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
         new Thread(new Runnable() {
             @Override
             public void run() {
                 HttpURLConnection conn = null;
 
                 try {
-                    URL url = new URL(BASE_URL + path);
+                    URL url = new URL(baseUrl + path);
                     conn = (HttpURLConnection) url.openConnection();
 
                     conn.setUseCaches(false);
@@ -141,8 +146,19 @@ class HTTPClient {
 
         try {
             in = new BufferedInputStream(conn.getInputStream());
-        } catch (FileNotFoundException e) {
-            in = new BufferedInputStream(conn.getErrorStream());
+        } catch (IOException e) {
+            // Every error status throws here, but with two different types: HttpURLConnection uses
+            // FileNotFoundException for 404 and 410 only, and a plain IOException for everything
+            // else. Catching just the former lost the real status code — the handler saw -1, which
+            // hid both the 410 stop signal (had 410 not happened to be in that pair) and every
+            // retryable status such as 429 or 503.
+            InputStream errorStream = conn.getErrorStream();
+            if (errorStream == null) {
+                Logger.error("No response body for status " + responseCode);
+                invokeSafely(responseHandler, false, responseCode, new JSONObject());
+                return;
+            }
+            in = new BufferedInputStream(errorStream);
         }
 
         String response = convertStreamToString(in);
