@@ -11,6 +11,8 @@ class TaskQueueManager {
     private final Queue<NamedRunnable> taskQueue = new LinkedList<>();
     private boolean isProcessing = false;
     private boolean isInitialized = false;
+    /** Set when the server tells the SDK to stop (HTTP 410). Nothing is queued or run afterwards. */
+    private boolean isStopped = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable timeoutRunnable;
 
@@ -30,6 +32,11 @@ class TaskQueueManager {
 
     // Add a task to the queue. If initialized, execute it immediately.
     public synchronized void addTask(NamedRunnable task) {
+        if (isStopped) {
+            Logger.verbose("SDK is stopped, ignoring task: " + task.getTaskName());
+            return;
+        }
+
         taskQueue.add(task);
         Logger.verbose("Task added to queue: " + task.getTaskName() + ". Queue size after adding: " + taskQueue.size());
 
@@ -93,6 +100,29 @@ class TaskQueueManager {
         processNext();
     }
 
+    /**
+     * Drop everything pending and ignore new tasks, for the rest of this process.
+     *
+     * The queue only starts draining once the device is registered, which never happens when the
+     * project is gone, so pending tasks would otherwise sit in memory for the app's lifetime.
+     */
+    public synchronized void stop() {
+        isStopped = true;
+
+        int discarded = taskQueue.size();
+        taskQueue.clear();
+        Logger.verbose("SDK stopped, task queue cleared. Pending tasks discarded: " + discarded);
+    }
+
+    synchronized boolean isStopped() {
+        return isStopped;
+    }
+
+    /** Visible for tests: number of tasks still waiting. */
+    synchronized int queueSize() {
+        return taskQueue.size();
+    }
+
     // Mark the task queue as initialized and start processing tasks.
     public synchronized void onInitialized() {
         isInitialized = true;
@@ -112,6 +142,7 @@ class TaskQueueManager {
         // Reset processing state
         isProcessing = false;
         isInitialized = false;
+        isStopped = false;
 
         // Cancel any pending timeout
         if (timeoutRunnable != null) {

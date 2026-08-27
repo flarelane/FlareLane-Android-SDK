@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.1";
+        public static String version = "1.11.2";
     }
 
     // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
@@ -142,6 +142,14 @@ public class FlareLane {
     }
 
     public static void subscribe(Context context, boolean fallbackToSettings, @Nullable IsSubscribedHandler handler) {
+        // Nothing will run while the SDK is stopped, so the subscription state cannot change.
+        // Answer with what we know instead of leaving the caller waiting on a result that never
+        // arrives — the Flutter and React Native bridges resolve only from inside this handler.
+        if (taskQueueManager.isStopped()) {
+            if (handler != null) mainHandler.post(() -> handler.onSuccess(isSubscribed(context)));
+            return;
+        }
+
         taskQueueManager.addTask(new NamedRunnable("subscribe") {
              @Override
              public void run() {
@@ -191,6 +199,14 @@ public class FlareLane {
     }
 
     public static void unsubscribe(Context context, @Nullable IsSubscribedHandler handler) {
+        // Nothing will run while the SDK is stopped, so the subscription state cannot change.
+        // Answer with what we know instead of leaving the caller waiting on a result that never
+        // arrives — the Flutter and React Native bridges resolve only from inside this handler.
+        if (taskQueueManager.isStopped()) {
+            if (handler != null) mainHandler.post(() -> handler.onSuccess(isSubscribed(context)));
+            return;
+        }
+
         taskQueueManager.addTask(new NamedRunnable("unsubscribe") {
              @Override
              public void run() {

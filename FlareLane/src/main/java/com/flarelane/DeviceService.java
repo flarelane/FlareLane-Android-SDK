@@ -16,6 +16,23 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 class DeviceService {
+    /**
+     * 410 means this project or device is gone and will not come back within this app run, so the
+     * SDK stops until the next launch. Only the device create/update endpoints carry that meaning,
+     * which is why the check lives here instead of in HTTPClient: a 410 from any other endpoint
+     * must never be able to shut the SDK down.
+     */
+    static boolean isGone(int responseCode) {
+        return responseCode == 410;
+    }
+
+    private static void stopSdkIfGone(int responseCode, String path) {
+        if (!isGone(responseCode)) return;
+
+        Logger.error("Device endpoint returned 410, stopping the SDK until the next app launch. path: " + path);
+        TaskQueueManager.getInstance().stop();
+    }
+
     static JSONObject getSystemInfo(Context context) throws Exception {
         JSONObject data = new JSONObject();
         data.put("platform", Constants.SDK_PLATFORM);
@@ -67,7 +84,14 @@ class DeviceService {
     }
 
     static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
-        HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
+        String path = "internal/v1/projects/" + projectId + "/devices";
+        HTTPClient.post(path, data, new HTTPClient.ResponseHandler() {
+            @Override
+            void onFailure(int responseCode, JSONObject response) {
+                super.onFailure(responseCode, response);
+                stopSdkIfGone(responseCode, path);
+            }
+
             @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
@@ -90,7 +114,14 @@ class DeviceService {
         String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
-        HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
+        String path = "internal/v1/projects/" + projectId + "/devices/" + deviceId;
+        HTTPClient.patch(path, data, new HTTPClient.ResponseHandler() {
+            @Override
+            void onFailure(int responseCode, JSONObject response) {
+                super.onFailure(responseCode, response);
+                stopSdkIfGone(responseCode, path);
+            }
+
             @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);
