@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.2";
+        public static String version = "1.11.3";
     }
 
     // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
