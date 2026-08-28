@@ -8,9 +8,18 @@ import java.util.Queue;
 
 class TaskQueueManager {
     private static final long TIMEOUT_MS = 10000; // 10 seconds
+
+    // Bounded so a queue that never opens (registration failing while the app
+    // stays foregrounded and keeps calling the SDK) cannot grow without limit.
+    // The newest task is rejected rather than the oldest dropped, because iOS's
+    // OperationQueue cannot drop its oldest — this keeps both platforms identical.
+    static final int MAX_PENDING_TASKS = 100;
+
     private final Queue<NamedRunnable> taskQueue = new LinkedList<>();
     private boolean isProcessing = false;
     private boolean isInitialized = false;
+    /** Set when the server answered 410 on a device endpoint; see {@link #stop()}. */
+    private boolean isStopped = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable timeoutRunnable;
 
@@ -30,6 +39,16 @@ class TaskQueueManager {
 
     // Add a task to the queue. If initialized, execute it immediately.
     public synchronized void addTask(NamedRunnable task) {
+        if (isStopped) {
+            Logger.verbose("SDK is stopped, ignoring task: " + task.getTaskName());
+            return;
+        }
+
+        if (taskQueue.size() >= MAX_PENDING_TASKS) {
+            Logger.error("Task queue is full (" + MAX_PENDING_TASKS + " pending), ignoring task: " + task.getTaskName());
+            return;
+        }
+
         taskQueue.add(task);
         Logger.verbose("Task added to queue: " + task.getTaskName() + ". Queue size after adding: " + taskQueue.size());
 
@@ -93,6 +112,20 @@ class TaskQueueManager {
         processNext();
     }
 
+    /**
+     * Stop for the rest of this process: the server answered 410 on a device
+     * endpoint, meaning this project or device is gone and will not come back
+     * within this run. Pending tasks are dropped so they cannot fire later,
+     * new tasks are refused, and the next app launch starts clean.
+     */
+    public synchronized void stop() {
+        isStopped = true;
+
+        int discarded = taskQueue.size();
+        taskQueue.clear();
+        Logger.verbose("SDK stopped, task queue cleared. Pending tasks discarded: " + discarded);
+    }
+
     // Mark the task queue as initialized and start processing tasks.
     public synchronized void onInitialized() {
         isInitialized = true;
@@ -112,6 +145,10 @@ class TaskQueueManager {
         // Reset processing state
         isProcessing = false;
         isInitialized = false;
+        // Deliberately lifted here: reset() is the explicit re-initialization entry
+        // point (resetDevice / a new projectId), which must be allowed to try again.
+        // If the project is still gone, the very next registration's 410 re-stops.
+        isStopped = false;
 
         // Cancel any pending timeout
         if (timeoutRunnable != null) {

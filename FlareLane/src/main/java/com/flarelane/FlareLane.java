@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.1";
+        public static String version = "1.11.2";
     }
 
     // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
@@ -130,12 +130,18 @@ public class FlareLane {
                     com.flarelane.DeviceService.update(context, data, new com.flarelane.DeviceService.ResponseHandler() {
                         @Override
                         public void onSuccess(com.flarelane.Device device) {
-                            BaseSharedPreferences.setUserId(context, device.userId);
+                            // The intended value, not the echo: the server persists before
+                            // answering, so on success the sent value is the truth — and this
+                            // stays correct even if a slow echo arrives out of order.
+                            BaseSharedPreferences.setUserId(context, userId);
                             completeTask();
                         }
                     });
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    // Without this the queue would wait out its full timeout for a task
+                    // that already died (e.g. deviceId missing) — 10 seconds per task.
+                    completeTask();
                 }
             }
         });
@@ -185,6 +191,9 @@ public class FlareLane {
                      }
                  } catch (Exception e) {
                      com.flarelane.BaseErrorHandler.handle(e);
+                     // Without this the queue would wait out its full timeout for a task
+                     // that already died (e.g. deviceId missing) — 10 seconds per task.
+                     completeTask();
                  }
              }
          });
@@ -214,6 +223,9 @@ public class FlareLane {
                      });
                  } catch (Exception e) {
                      com.flarelane.BaseErrorHandler.handle(e);
+                     // Without this the queue would wait out its full timeout for a task
+                     // that already died (e.g. deviceId missing) — 10 seconds per task.
+                     completeTask();
                  }
              }
          });
@@ -232,6 +244,9 @@ public class FlareLane {
                     completeTask();
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    // Without this the queue would wait out its full timeout for a task
+                    // that already died (e.g. deviceId missing) — 10 seconds per task.
+                    completeTask();
                 }
             }
         });
@@ -253,6 +268,9 @@ public class FlareLane {
                     });
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
+                    // Without this the queue would wait out its full timeout for a task
+                    // that already died (e.g. deviceId missing) — 10 seconds per task.
+                    completeTask();
                 }
             }
         });
@@ -305,6 +323,9 @@ public class FlareLane {
                         });
                     } catch (Exception e) {
                         com.flarelane.BaseErrorHandler.handle(e);
+                        // Without this the queue would wait out its full timeout for a task
+                        // that already died (e.g. deviceId missing) — 10 seconds per task.
+                        completeTask();
                     }
                 }
             });

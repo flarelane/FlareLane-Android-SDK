@@ -27,6 +27,8 @@ internal object InAppService {
             .put("group", group)
             .put("data", data)
 
+        // A read in POST clothing — fetching the message list twice is harmless,
+        // so it is marked idempotent and may retry.
         HTTPClient.post(
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages?group=$group",
             body,
@@ -41,7 +43,8 @@ internal object InAppService {
                     Logger.error("getMessage onFailure: code=$responseCode body=$response")
                     callback.invoke(null)
                 }
-            })
+            },
+            true)
     }
 
     // Extracted for testability: no I/O, no state mutation. Returns null on empty data
