@@ -4,6 +4,9 @@ import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
@@ -146,6 +149,86 @@ class HTTPClientRetryTest {
             server.requests[1].body
         )
         assertEquals(body.toString(), server.requests[0].body)
+    }
+
+    /**
+     * The key must survive a no-response retry: if the response was lost after the
+     * server processed the request, the resend is only recognisable as a duplicate
+     * because it carries the same key.
+     */
+    @Test
+    fun `a no-response retry reuses the idempotency key`() {
+        server = StubServer(
+            StubServer.Reply(StubServer.DROP_CONNECTION),
+            StubServer.Reply(200)
+        ).also { it.start() }
+
+        post()
+
+        assertEquals(2, server.requests.size)
+        assertNotNull("idempotent POSTs must carry a key", server.requests[0].idempotencyKey)
+        assertEquals(
+            "a retry after no response must reuse the key",
+            server.requests[0].idempotencyKey,
+            server.requests[1].idempotencyKey
+        )
+    }
+
+    /**
+     * A received error means the server may have reserved the key without completing
+     * the request — retrying with a fresh key keeps that retry deliverable.
+     */
+    @Test
+    fun `a received-error retry rotates the idempotency key`() {
+        server = StubServer(StubServer.Reply(500), StubServer.Reply(200)).also { it.start() }
+
+        post()
+
+        assertEquals(2, server.requests.size)
+        assertNotNull(server.requests[0].idempotencyKey)
+        assertNotNull(server.requests[1].idempotencyKey)
+        assertNotEquals(
+            "a retry after a received error must use a fresh key",
+            server.requests[0].idempotencyKey,
+            server.requests[1].idempotencyKey
+        )
+    }
+
+    /**
+     * Only idempotent POSTs carry a key: nothing else has a harmful duplicate to
+     * prevent. GET stands in for the value-based methods here because the JVM's
+     * HttpURLConnection rejects PATCH (Android's OkHttp-backed engine allows it).
+     */
+    @Test
+    fun `non-idempotent posts and value-based methods carry no idempotency key`() {
+        server = StubServer(StubServer.Reply(200), StubServer.Reply(200)).also { it.start() }
+
+        post(idempotent = false)
+
+        val done = CountDownLatch(1)
+        HTTPClient.send(server.baseUrl, "GET", "remote-params", null, true,
+            object : HTTPClient.ResponseHandler() {
+                override fun onSuccess(responseCode: Int, response: JSONObject) = done.countDown()
+                override fun onFailure(responseCode: Int, response: JSONObject) = done.countDown()
+            })
+        assertTrue(done.await(TIMEOUT_SECONDS, TimeUnit.SECONDS))
+
+        assertEquals(2, server.requests.size)
+        assertNull("a non-idempotent POST must not carry a key", server.requests[0].idempotencyKey)
+        assertNull("a value-based method must not carry a key", server.requests[1].idempotencyKey)
+    }
+
+    /** 409 (idempotency conflict) is terminal: one attempt, one callback, no stop. */
+    @Test
+    fun `a 409 fails once without retry`() {
+        server = StubServer(StubServer.Reply(409, """{"message":"Idempotent request is already being processed"}"""))
+            .also { it.start() }
+
+        val outcome = post(watchMs = PAST_FIRST_BACKOFF_MS)
+
+        assertEquals(409, outcome.failureCode)
+        assertEquals("exactly one callback", 1, outcome.totalCallbacks)
+        assertEquals("409 must not be retried", 1, server.requests.size)
     }
 
     // MARK: - Helpers
