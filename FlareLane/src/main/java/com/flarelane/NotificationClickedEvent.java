@@ -13,7 +13,7 @@ import android.content.Context;
  * to thread through.
  *
  * <p>Deep-link / launchApp handling lives in {@link NotificationClickedActivity} because it needs
- * Activity-level APIs (startActivity, isTaskRoot). The Activity creates this event and then
+ * Activity-level APIs (startActivity, ActivityManager.AppTask). The Activity creates this event and then
  * handles the link on its own — keeping UI side-effects out of this data wrapper.
  */
 public class NotificationClickedEvent {
