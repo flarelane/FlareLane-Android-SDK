@@ -111,6 +111,14 @@ class HTTPClient {
             return;
         }
 
+        // One idempotency key per logical call, attached to idempotent POSTs only:
+        // an event resent because its response was lost carries the same key, so
+        // the backend can recognise the duplicate. Value-based requests
+        // (GET/PATCH/DELETE) are idempotent by contract and need no key.
+        final String[] idempotencyKey = {
+                idempotent && "POST".equals(method) ? java.util.UUID.randomUUID().toString() : null
+        };
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -123,6 +131,9 @@ class HTTPClient {
 
                     try {
                         conn = openConnection(baseUrl, method, path, sendBytes, deadline);
+                        if (idempotencyKey[0] != null) {
+                            conn.setRequestProperty("Idempotency-Key", idempotencyKey[0]);
+                        }
                         if (sendBytes != null) {
                             OutputStream outputStream = conn.getOutputStream();
                             outputStream.write(sendBytes);
@@ -162,6 +173,15 @@ class HTTPClient {
                         invokeSafely(responseHandler, false, responseCode,
                                 responseJson != null ? responseJson : new JSONObject());
                         return;
+                    }
+
+                    // The key is kept when no response arrived (the resend must be
+                    // recognisable as a duplicate in case the response was lost), but
+                    // regenerated when the server answered a retryable error — a
+                    // server that reserves keys before processing would otherwise
+                    // reject the retry for a request it never completed.
+                    if (idempotencyKey[0] != null && responseCode != -1) {
+                        idempotencyKey[0] = java.util.UUID.randomUUID().toString();
                     }
 
                     // A stop that lands mid-backoff does not cancel this retry on purpose:

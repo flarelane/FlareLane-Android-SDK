@@ -39,7 +39,7 @@ class StopAndQueueTest {
         queue.reset()
         val ran = AtomicInteger()
 
-        for (code in intArrayOf(-1, 400, 404, 408, 429, 500, 503)) {
+        for (code in intArrayOf(-1, 400, 404, 408, 409, 429, 500, 503)) {
             DeviceService.stopSdkIfGone(code)
         }
         val latch = CountDownLatch(1)

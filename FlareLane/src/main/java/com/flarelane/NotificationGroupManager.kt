@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import androidx.core.app.NotificationCompat
+import com.flarelane.util.IntentUtil
 import kotlin.math.absoluteValue
 
 /**
@@ -86,8 +87,10 @@ internal object NotificationGroupManager {
 
             // Summary taps just open the app; they are not per-notification clicks, so no
             // CLICKED event should fire from here. requestCode collisions across groups are
-            // harmless — every summary carries the identical launch intent.
-            val contentIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+            // harmless — every summary carries the identical launch intent. The intent is shaped
+            // like a launcher tap (see IntentUtil.createLauncherIntent) so a running app is resumed
+            // instead of getting a second main activity stacked on it.
+            val contentIntent = IntentUtil.createLauncherIntent(context)?.let {
                 PendingIntent.getActivity(context, threadId.hashCode().absoluteValue, it, PendingIntent.FLAG_IMMUTABLE)
             }
 

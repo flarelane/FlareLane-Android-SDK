@@ -26,7 +26,7 @@ class StubServer(private vararg val scripted: Reply) {
         const val DROP_CONNECTION = 0
     }
 
-    data class Recorded(val method: String, val path: String, val body: String)
+    data class Recorded(val method: String, val path: String, val body: String, val idempotencyKey: String?)
 
     private val socket = ServerSocket(0)
     private val log = Collections.synchronizedList(mutableListOf<Recorded>())
@@ -68,11 +68,15 @@ class StubServer(private vararg val scripted: Reply) {
         val parts = requestLine.split(" ")
 
         var contentLength = 0
+        var idempotencyKey: String? = null
         while (true) {
             val header = readLine(input) ?: break
             if (header.isEmpty()) break
             if (header.lowercase().startsWith("content-length:")) {
                 contentLength = header.substringAfter(":").trim().toIntOrNull() ?: 0
+            }
+            if (header.lowercase().startsWith("idempotency-key:")) {
+                idempotencyKey = header.substringAfter(":").trim()
             }
         }
 
@@ -80,7 +84,7 @@ class StubServer(private vararg val scripted: Reply) {
         val index: Int
         synchronized(log) {
             index = log.size
-            log.add(Recorded(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }, body))
+            log.add(Recorded(parts.getOrElse(0) { "" }, parts.getOrElse(1) { "" }, body, idempotencyKey))
         }
 
         val reply = scripted.getOrElse(index) { scripted.last() }

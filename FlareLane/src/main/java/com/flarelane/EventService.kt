@@ -3,7 +3,6 @@ package com.flarelane
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.UUID
 
 internal object EventService {
     @JvmField
@@ -102,12 +101,7 @@ internal object EventService {
         val subjectType = if (userId != null) "user" else "device"
         val subjectId = userId ?: deviceId
 
-        // Insert id — the client-generated dedup key (the industry-standard name
-        // for it), separate from the server-owned record id: a retried request
-        // carries the same body, so the backend can recognise a resend whose
-        // response was lost.
         val event = JSONObject()
-            .put("insertId", UUID.randomUUID().toString())
             .put("type", type)
             .put("subjectType", subjectType)
             .put("subjectId", subjectId)
@@ -125,7 +119,8 @@ internal object EventService {
 
         val body = JSONObject().put("events", JSONArray().put(event))
 
-        // Safe to retry thanks to the dedup key above.
+        // Safe to retry: idempotent POSTs carry an Idempotency-Key header
+        // (see HTTPClient.send), so a resend is recognisable as a duplicate.
         HTTPClient.post(
             "internal/v1/projects/$projectId/events-v2",
             body,
