@@ -130,11 +130,13 @@ internal class NotificationClickedActivity : Activity() {
             // MRU-ordered (index 0 = most recent): AOSP RecentTasks.getAppTasksList walks the
             // recents list, which re-inserts a task at index 0 on every resume / move-to-top.
             // The list is filtered only by uid and package, so this trampoline's own task is
-            // in it too. Judge a task by what is on TOP of it,
-            // not by its root: a task whose top is an SDK screen (this trampoline, or a stale
-            // SDK WebView left from an earlier push) is not the host app's UI, so skip it and
-            // let the launcher fallback stack the main activity on it like 1.11.2 did. A task
-            // that was merely rooted by an SDK WebView but now shows host activities is resumed.
+            // in it too. Judge a task by what is on TOP of it, not by its root: a task whose top
+            // is an SDK screen (this trampoline, or a stale SDK WebView left from an earlier push)
+            // is not the host app's UI, so skip it and let the launcher fallback decide as a
+            // home-screen tap would: a task rooted by the SDK WebView gets the main activity
+            // stacked on it, a launcher-rooted task is brought forward as-is (WebView still on
+            // top) — exactly what Android 14+ already did in 1.11.2. A task that was merely
+            // rooted by an SDK WebView but now shows host activities is resumed.
             val appTask = activityManager.appTasks.firstOrNull { task ->
                 // getTaskInfo() throws (it does not return null) when the task died between the
                 // two calls; keep that per task so one stale entry cannot abort the whole lookup.
