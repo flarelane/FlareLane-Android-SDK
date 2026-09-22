@@ -1,6 +1,7 @@
 package com.flarelane
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -111,12 +112,52 @@ internal class NotificationClickedActivity : Activity() {
         }
     }
 
+    /**
+     * Bring the app forward the way a Recents tap does: resume its existing task untouched (no new
+     * activity instance, no clear-top, no onNewIntent), so whatever the click handler just navigated
+     * to stays on top, and singleTask roots or tasks not rooted by the launcher are left alone.
+     * Only when the app has no task at all (cold start, swiped away from Recents) fall back to the
+     * launcher intent.
+     *
+     * There is intentionally no isTaskRoot guard here: this Activity is started from a notification
+     * PendingIntent (no source activity, so NEW_TASK is forced) into its own task
+     * (android:taskAffinity in the manifest), so it is ALWAYS the root of that task. isTaskRoot was
+     * always true and said nothing about whether the host app was running. Do not re-add it.
+     */
     private fun launchApp() {
-        if (isTaskRoot) {
-            Logger.verbose("This is last activity in the stack")
-            packageManager.getLaunchIntentForPackage(packageName)?.let {
-                startActivity(it)
+        try {
+            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            // MRU-ordered (index 0 = most recent): AOSP RecentTasks.getAppTasksList walks the
+            // recents list, which re-inserts a task at index 0 on every resume / move-to-top.
+            // The list is filtered only by uid and package, so this trampoline's own task is
+            // in it too. Judge a task by what is on TOP of it,
+            // not by its root: a task whose top is an SDK screen (this trampoline, or a stale
+            // SDK WebView left from an earlier push) is not the host app's UI, so skip it and
+            // let the launcher fallback stack the main activity on it like 1.11.2 did. A task
+            // that was merely rooted by an SDK WebView but now shows host activities is resumed.
+            val appTask = activityManager.appTasks.firstOrNull { task ->
+                // getTaskInfo() throws (it does not return null) when the task died between the
+                // two calls; keep that per task so one stale entry cannot abort the whole lookup.
+                val topClassName = runCatching { task.taskInfo.topActivity?.className }.getOrNull()
+                topClassName != null && topClassName !in SDK_SCREENS
             }
+            if (appTask != null) {
+                Logger.verbose("App task found, bringing it to front as-is")
+                appTask.moveToFront()
+                return
+            }
+        } catch (e: Exception) {
+            BaseErrorHandler.handle(e)
         }
+        Logger.verbose("No resumable app task, starting the launcher activity")
+        IntentUtil.createLauncherIntent(this)?.let { startActivity(it) }
+    }
+
+    private companion object {
+        /** SDK-owned full-screen activities; a task showing one of these on top is not host UI. */
+        val SDK_SCREENS = setOf(
+            NotificationClickedActivity::class.java.name,
+            FlareLaneWebViewActivity::class.java.name
+        )
     }
 }

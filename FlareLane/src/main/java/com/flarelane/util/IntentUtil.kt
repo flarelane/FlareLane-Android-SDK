@@ -99,4 +99,16 @@ internal object IntentUtil {
 
         return resultIntent
     }
+
+    /**
+     * The host app's launcher intent shaped like what the home screen sends.
+     *
+     * `getLaunchIntentForPackage` keeps the package set on the returned intent while the launcher's
+     * own intent has none. Up to Android 13 the system includes the package when it compares an
+     * incoming intent with the task's root intent, so keeping it makes a running app get a SECOND
+     * main activity stacked on its task instead of being resumed. Flags are left as returned
+     * (NEW_TASK). Same recipe as OneSignal and Airship.
+     */
+    fun createLauncherIntent(context: Context): Intent? =
+        context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply { setPackage(null) }
 }
