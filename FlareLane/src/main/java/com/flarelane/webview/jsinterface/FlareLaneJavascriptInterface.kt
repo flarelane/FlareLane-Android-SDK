@@ -17,6 +17,7 @@ class FlareLaneJavascriptInterface(private val context: Context, private val web
     fun syncDeviceData() {
         val data: Map<String, Any> = mapOf(
             "projectId" to FlareLane.getProjectId(context),
+            "region" to FlareLane.getRegion(context),
             "platform" to Constants.SDK_PLATFORM,
             "deviceId" to FlareLane.getDeviceId(context),
             "userId" to FlareLane.getUserId(context)

@@ -29,7 +29,7 @@ class InAppServiceTest {
 
         var callCount = 0
         var received: ModelInAppMessage? = ModelInAppMessage(id = "sentinel", htmlString = "sentinel")
-        InAppService.getMessage("p", "d", "g", JSONObject()) { model ->
+        InAppService.getMessage(null, "p", "d", "g", JSONObject()) { model ->
             callCount++
             received = model
         }

@@ -40,7 +40,7 @@ class StopAndQueueTest {
         val ran = AtomicInteger()
 
         for (code in intArrayOf(-1, 400, 404, 408, 409, 429, 500, 503)) {
-            DeviceService.stopSdkIfGone(code)
+            DeviceService.stopSdkIfGone(code, null)
         }
         val latch = CountDownLatch(1)
         queue.addTask(countingTask(ran, latch))
@@ -56,7 +56,7 @@ class StopAndQueueTest {
         val ran = AtomicInteger()
         queue.addTask(countingTask(ran)) // queued while the queue is still closed
 
-        DeviceService.stopSdkIfGone(410)
+        DeviceService.stopSdkIfGone(410, null)
 
         queue.addTask(countingTask(ran)) // refused outright
         queue.onInitialized()
@@ -68,7 +68,7 @@ class StopAndQueueTest {
     @Test
     fun `reset lifts the stop so the next launch starts clean`() {
         queue.reset()
-        DeviceService.stopSdkIfGone(410)
+        DeviceService.stopSdkIfGone(410, null)
         queue.reset()
 
         val ran = AtomicInteger()

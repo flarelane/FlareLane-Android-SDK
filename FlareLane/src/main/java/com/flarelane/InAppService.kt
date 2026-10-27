@@ -13,7 +13,7 @@ internal object InAppService {
     var isDisplaying = false
 
     @JvmStatic
-    fun getMessage(projectId: String, deviceId: String, group: String, data: JSONObject, callback: (ModelInAppMessage?) -> Unit) {
+    fun getMessage(region: String?, projectId: String, deviceId: String, group: String, data: JSONObject, callback: (ModelInAppMessage?) -> Unit) {
         // Every exit path must invoke `callback` exactly once so the TaskQueueManager's
         // completeTask() is called and the queue can advance without waiting for TIMEOUT_MS.
         if (isDisplaying) {
@@ -30,6 +30,7 @@ internal object InAppService {
         // A read in POST clothing — fetching the message list twice is harmless,
         // so it is marked idempotent and may retry.
         HTTPClient.post(
+            region,
             "internal/v1/projects/$projectId/devices/$deviceId/in-app-messages?group=$group",
             body,
             object : ResponseHandler() {

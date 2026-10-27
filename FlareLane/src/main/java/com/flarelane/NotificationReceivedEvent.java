@@ -41,6 +41,7 @@ public class NotificationReceivedEvent {
     public void display() {
         try {
             Notification flarelaneNotification = this.getNotification();
+            String region = com.flarelane.BaseSharedPreferences.getRegion(context);
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
             String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
             String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
@@ -244,9 +245,9 @@ public class NotificationReceivedEvent {
                         if (!NotificationEventProcessor.INSTANCE.shouldProcess(context, flarelaneNotification.id, eventType)) {
                             Logger.verbose("Notification " + eventType + " already processed, skipping: " + flarelaneNotification.id);
                         } else if (isForeground) {
-                            EventService.createForegroundReceived(projectId, deviceId, flarelaneNotification, userId);
+                            EventService.createForegroundReceived(region, projectId, deviceId, flarelaneNotification, userId);
                         } else {
-                            EventService.createBackgroundReceived(projectId, deviceId, flarelaneNotification, userId);
+                            EventService.createBackgroundReceived(region, projectId, deviceId, flarelaneNotification, userId);
                         }
                     } catch (Exception e) {
                         BaseErrorHandler.handle(e);

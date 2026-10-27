@@ -43,11 +43,12 @@ public class NotificationClickedEvent {
                 Logger.verbose("Notification CLICKED already processed, skipping: " + notification.id);
                 return;
             }
+            String region = BaseSharedPreferences.getRegion(context);
             String projectId = BaseSharedPreferences.getProjectId(context, false);
             String deviceId = BaseSharedPreferences.getDeviceId(context, false);
             String userId = BaseSharedPreferences.getUserId(context, true);
             // EventService is a Kotlin `object`; reach the singleton via INSTANCE from Java.
-            EventService.INSTANCE.createNotificationClicked(projectId, deviceId, notification, userId);
+            EventService.INSTANCE.createNotificationClicked(region, projectId, deviceId, notification, userId);
         } catch (Exception e) {
             BaseErrorHandler.handle(e);
         }
