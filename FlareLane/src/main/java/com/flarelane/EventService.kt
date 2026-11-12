@@ -10,6 +10,7 @@ internal object EventService {
 
     @Throws(Exception::class)
     fun createNotificationClicked(
+        region: String?,
         projectId: String,
         deviceId: String,
         notification: Notification,
@@ -29,7 +30,7 @@ internal object EventService {
                 if (!url.isNullOrEmpty()) put("url", url)
             }
         }
-        create(projectId, deviceId, notification.id, EventType.Clicked, userId, data)
+        create(region, projectId, deviceId, notification.id, EventType.Clicked, userId, data)
 
         if (FlareLane.notificationClickedHandler != null) {
             FlareLane.notificationClickedHandler.onClicked(notification)
@@ -55,18 +56,18 @@ internal object EventService {
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createBackgroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
-        create(projectId, deviceId, notification.id, EventType.BackgroundReceived, userId)
+    fun createBackgroundReceived(region: String?, projectId: String, deviceId: String, notification: Notification, userId: String?) {
+        create(region, projectId, deviceId, notification.id, EventType.BackgroundReceived, userId)
     }
 
     @JvmStatic
     @Throws(Exception::class)
-    fun createForegroundReceived(projectId: String, deviceId: String, notification: Notification, userId: String?) {
-        create(projectId, deviceId, notification.id, EventType.ForegroundReceived, userId)
+    fun createForegroundReceived(region: String?, projectId: String, deviceId: String, notification: Notification, userId: String?) {
+        create(region, projectId, deviceId, notification.id, EventType.ForegroundReceived, userId)
     }
 
     @Throws(Exception::class)
-    private fun create(projectId: String, deviceId: String, notificationId: String, type: String, userId: String?, data: JSONObject? = null) {
+    private fun create(region: String?, projectId: String, deviceId: String, notificationId: String, type: String, userId: String?, data: JSONObject? = null) {
         val body = JSONObject()
         body.put("notificationId", notificationId)
         body.put("deviceId", deviceId)
@@ -83,6 +84,7 @@ internal object EventService {
         }
 
         HTTPClient.post(
+            region,
             "internal/v1/projects/$projectId/events",
             body,
             HTTPClient.ResponseHandler()
@@ -92,6 +94,7 @@ internal object EventService {
     @JvmStatic
     @Throws(Exception::class)
     fun trackEvent(
+        region: String?,
         projectId: String,
         deviceId: String,
         userId: String?,
@@ -122,6 +125,7 @@ internal object EventService {
         // Safe to retry: idempotent POSTs carry an Idempotency-Key header
         // (see HTTPClient.send), so a resend is recognisable as a duplicate.
         HTTPClient.post(
+            region,
             "internal/v1/projects/$projectId/events-v2",
             body,
             HTTPClient.ResponseHandler(),

@@ -7,6 +7,7 @@ class BaseSharedPreferences {
     private static final String SHARED_PREFERENCE_KEY_PREFIX = "com.flarelane.SHARED_PREFERENCE_KEY_";
     private static final String DEVICE_ID_KEY = "com.flarelane.DEVICE_ID_KEY";
     private static final String PROJECT_ID_KEY = "com.flarelane.PROJECT_ID_KEY";
+    private static final String REGION_KEY = "com.flarelane.REGION_KEY";
     private static final String PUSH_TOKEN_KEY = "com.flarelane.PUSH_TOKEN_KEY";
     private static final String USER_ID_KEY = "com.flarelane.USER_ID_KEY";
     private static final String IS_SUBSCRIBED_KEY = "com.flarelane.IS_SUBSCRIBED_KEY";
@@ -49,6 +50,23 @@ class BaseSharedPreferences {
             editor.remove(PROJECT_ID_KEY);
         } else {
             editor.putString(PROJECT_ID_KEY, projectId);
+        }
+
+        return editor.commit();
+    }
+
+    // null when nothing was saved: every install that predates the region option,
+    // and those are by definition in the default region (HTTPClient.baseUrlFor).
+    public static String getRegion(Context context) {
+        return getSharedPreferences(context).getString(REGION_KEY, null);
+    }
+
+    public static boolean setRegion(Context context, String region) {
+        android.content.SharedPreferences.Editor editor = getSharedPreferences(context).edit();
+        if (region == null) {
+            editor.remove(REGION_KEY);
+        } else {
+            editor.putString(REGION_KEY, region);
         }
 
         return editor.commit();

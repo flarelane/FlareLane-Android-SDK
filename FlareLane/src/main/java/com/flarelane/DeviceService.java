@@ -21,11 +21,16 @@ class DeviceService {
      * rest of this app run, so the SDK stops queueing and sending. Only these
      * two endpoints carry that meaning — a 410 from any other endpoint must
      * never be able to shut the SDK down.
+     *
+     * A project created in one region is unknown to every other region, so a
+     * project initialized with the wrong region option also ends here — hence
+     * the region and the hint in the log line.
      */
-    static void stopSdkIfGone(int responseCode) { // package-private for direct spec coverage
+    static void stopSdkIfGone(int responseCode, @Nullable String region) { // package-private for direct spec coverage
         if (responseCode != 410) return;
 
-        Logger.error("Device endpoint returned 410, stopping the SDK until the next app launch.");
+        Logger.error("Device endpoint returned 410 (region: " + (region != null ? region : HTTPClient.DEFAULT_REGION)
+                + "), stopping the SDK until the next app launch. If the project exists, check the region option.");
         TaskQueueManager.getInstance().stop();
     }
 
@@ -47,7 +52,8 @@ class DeviceService {
     static void register(Context context, String projectId, @Nullable ResponseHandler responseHandler) {
         try {
             JSONObject data = getSystemInfo(context);
-            DeviceService.create(projectId, data, new ResponseHandler() {
+            String region = BaseSharedPreferences.getRegion(context);
+            DeviceService.create(region, projectId, data, new ResponseHandler() {
                 @Override
                 public void onSuccess(Device device) {
                     BaseSharedPreferences.setDeviceId(context, device.id);
@@ -79,12 +85,12 @@ class DeviceService {
         }
     }
 
-    static void create(String projectId, JSONObject data, @Nullable ResponseHandler handler) {
-        HTTPClient.post("internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
+    static void create(@Nullable String region, String projectId, JSONObject data, @Nullable ResponseHandler handler) {
+        HTTPClient.post(region, "internal/v1/projects/" + projectId + "/devices", data, new HTTPClient.ResponseHandler() {
             @Override
             void onFailure(int responseCode, JSONObject response) {
                 super.onFailure(responseCode, response);
-                stopSdkIfGone(responseCode);
+                stopSdkIfGone(responseCode, region);
             }
 
             @Override
@@ -106,14 +112,15 @@ class DeviceService {
     }
 
     static void update(Context context, JSONObject data, @Nullable ResponseHandler handler) throws Exception {
+        String region = com.flarelane.BaseSharedPreferences.getRegion(context);
         String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
 
-        HTTPClient.patch("internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
+        HTTPClient.patch(region, "internal/v1/projects/" + projectId + "/devices/" + deviceId, data, new HTTPClient.ResponseHandler() {
             @Override
             void onFailure(int responseCode, JSONObject response) {
                 super.onFailure(responseCode, response);
-                stopSdkIfGone(responseCode);
+                stopSdkIfGone(responseCode, region);
             }
 
             @Override
@@ -142,6 +149,7 @@ class DeviceService {
      * Matches Web SDK behavior: skip when userId is missing.
      */
     static void setUserAttributes(Context context, JSONObject attributes, @Nullable Runnable onComplete) throws Exception {
+        String region = com.flarelane.BaseSharedPreferences.getRegion(context);
         String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
         String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
@@ -161,7 +169,7 @@ class DeviceService {
         body.put("deviceId", deviceId);
         body.put("userId", userId);
 
-        HTTPClient.patch("internal/v1/projects/" + projectId + "/user-attributes", body, new HTTPClient.ResponseHandler() {
+        HTTPClient.patch(region, "internal/v1/projects/" + projectId + "/user-attributes", body, new HTTPClient.ResponseHandler() {
             @Override
             void onSuccess(int responseCode, JSONObject response) {
                 super.onSuccess(responseCode, response);

@@ -12,7 +12,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 // REF: https://pythonq.com/so/java/491072
 // REF: https://www.tutorialspoint.com/android/android_json_parser.htm/a/p
@@ -26,7 +28,40 @@ class HTTPClient {
         }
     }
 
-    private static final String BASE_URL = "https://service-api.flarelane.com/";
+    // Projects live in one region each, and every region is a separate deployment
+    // that only knows its own projects. The default region keeps the host this SDK
+    // always used, byte for byte, so integrations that never pass a region are
+    // untouched.
+    static final String DEFAULT_REGION = "us";
+    private static final String DEFAULT_BASE_URL = "https://service-api.flarelane.com/";
+    private static final Pattern REGION_PATTERN = Pattern.compile("^[a-z][a-z0-9]*$");
+    private static final int MAX_REGION_LENGTH = 16;
+
+    /**
+     * The region code to use, or null when the value is not a region code.
+     * No region at all means the default; an empty or malformed one is rejected
+     * instead of falling back, so a typo fails at init rather than sending the
+     * project's data to a region that does not know it.
+     */
+    static @Nullable String normalizeRegion(@Nullable String region) {
+        if (region == null) return DEFAULT_REGION;
+
+        String normalized = region.trim().toLowerCase(Locale.ROOT);
+        if (normalized.length() > MAX_REGION_LENGTH || !REGION_PATTERN.matcher(normalized).matches()) return null;
+        return normalized;
+    }
+
+    /**
+     * Host of a region: the default region keeps today's host, every other region
+     * sits under its own subdomain (kr → service-api.kr.flarelane.com). A rule
+     * rather than a table, so a new region needs DNS, not an SDK release.
+     * Expects a value that went through {@link #normalizeRegion}; null is the
+     * default region (installs that predate the option have nothing saved).
+     */
+    static String baseUrlFor(@Nullable String region) {
+        if (region == null || DEFAULT_REGION.equals(region)) return DEFAULT_BASE_URL;
+        return "https://service-api." + region + ".flarelane.com/";
+    }
 
     // HttpURLConnection defaults to waiting forever; on a mobile network that
     // can hold a request (and its task-queue slot) for the life of the process.
@@ -63,12 +98,16 @@ class HTTPClient {
         return half + ThreadLocalRandom.current().nextLong(half + 1);
     }
 
-    public static void get(String path, @Nullable ResponseHandler responseHandler) {
-        send(BASE_URL, "GET", path, null, true, responseHandler);
+    // Every entry point takes the region next to the path: callers read it from the
+    // same preferences as the projectId in that path, so a process the OS started
+    // for a notification — where initWithContext may never run — still reaches the
+    // project's own region.
+    public static void get(@Nullable String region, String path, @Nullable ResponseHandler responseHandler) {
+        send(baseUrlFor(region), "GET", path, null, true, responseHandler);
     }
 
-    public static void post(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        send(BASE_URL, "POST", path, body, false, responseHandler);
+    public static void post(@Nullable String region, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
+        send(baseUrlFor(region), "POST", path, body, false, responseHandler);
     }
 
     /**
@@ -79,23 +118,23 @@ class HTTPClient {
      * are idempotent by contract here: PATCH bodies are absolute values
      * (last-writer-wins), never increments.
      */
-    public static void post(String path, JSONObject body, @Nullable ResponseHandler responseHandler, boolean idempotent) {
-        send(BASE_URL, "POST", path, body, idempotent, responseHandler);
+    public static void post(@Nullable String region, String path, JSONObject body, @Nullable ResponseHandler responseHandler, boolean idempotent) {
+        send(baseUrlFor(region), "POST", path, body, idempotent, responseHandler);
     }
 
-    public static void patch(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        send(BASE_URL, "PATCH", path, body, true, responseHandler);
+    public static void patch(@Nullable String region, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
+        send(baseUrlFor(region), "PATCH", path, body, true, responseHandler);
     }
 
-    public static void delete(String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
-        send(BASE_URL, "DELETE", path, body, true, responseHandler);
+    public static void delete(@Nullable String region, String path, JSONObject body, @Nullable ResponseHandler responseHandler) {
+        send(baseUrlFor(region), "DELETE", path, body, true, responseHandler);
     }
 
     /**
      * The base URL is a parameter, not a field: the entry points above always
-     * pass the final {@link #BASE_URL}, so live traffic cannot be redirected,
-     * while tests can aim one request at a local stub server and exercise the
-     * real socket, parsing and retry path.
+     * pass the region's host from {@link #baseUrlFor}, so live traffic cannot be
+     * redirected, while tests can aim one request at a local stub server and
+     * exercise the real socket, parsing and retry path.
      */
     static void send(String baseUrl, String method, String path, @Nullable JSONObject body,
                      boolean idempotent, @Nullable ResponseHandler responseHandler) {

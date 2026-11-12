@@ -23,7 +23,7 @@ import org.json.JSONObject;
 public class FlareLane {
     public static class SdkInfo {
         public static SdkType type = SdkType.NATIVE;
-        public static String version = "1.11.3";
+        public static String version = "1.12.0";
     }
 
     // Log levels for setLogLevel(int). Values stay on the android.util.Log scale (lower is more
@@ -52,17 +52,38 @@ public class FlareLane {
     private static final Throttler inAppMessageThrottler = new Throttler(500); // 0.5 seconds in milliseconds
 
     public static void initWithContext(Context context, String projectId, boolean requestPermissionOnLaunch) {
+        initWithContext(context, projectId, null, requestPermissionOnLaunch);
+    }
+
+    /**
+     * @param region Region the project was created in: null or "us" (the default) for
+     *               existing projects, "kr" for projects in the Seoul region. Each region
+     *               only knows its own projects, so a wrong value means the SDK is refused.
+     */
+    public static void initWithContext(Context context, String projectId, @Nullable String region, boolean requestPermissionOnLaunch) {
         try {
+            String normalizedRegion = HTTPClient.normalizeRegion(region);
+            if (normalizedRegion == null) {
+                com.flarelane.Logger.error("Invalid region \"" + region + "\". Expected \"us\" (default) or \"kr\".");
+                return;
+            }
+
             FlareLane.requestPermissionOnLaunch = requestPermissionOnLaunch;
-            com.flarelane.Logger.verbose("initWithContext projectId: " + projectId);
+            com.flarelane.Logger.verbose("initWithContext projectId: " + projectId + ", region: " + normalizedRegion);
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
-            // If projectId is null or different, reset savedDeviceId to null
+            // If projectId is null or different, reset savedDeviceId to null.
+            // A region change alone keeps the device: a project lives in one region, so the same
+            // projectId with another region is a misconfiguration (the wrong region answers 410).
+            // Keeping the device lets the corrected release resume it instead of registering a second one.
             String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
             if (savedProjectId == null || !savedProjectId.contentEquals(projectId)) {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
                 com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
                 com.flarelane.BaseSharedPreferences.setProjectId(context, projectId);
+            }
+            if (!normalizedRegion.equals(com.flarelane.BaseSharedPreferences.getRegion(context))) {
+                com.flarelane.BaseSharedPreferences.setRegion(context, normalizedRegion);
             }
 
             deviceRegisterOrActivate(context, () -> {
@@ -236,11 +257,12 @@ public class FlareLane {
             @Override
             public void run() {
                 try {
+                    String region = com.flarelane.BaseSharedPreferences.getRegion(context);
                     String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
                     String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
                     String userId = com.flarelane.BaseSharedPreferences.getUserId(context, true);
 
-                    com.flarelane.EventService.trackEvent(projectId, deviceId, userId, type, data);
+                    com.flarelane.EventService.trackEvent(region, projectId, deviceId, userId, type, data);
                     completeTask();
                 } catch (Exception e) {
                     com.flarelane.BaseErrorHandler.handle(e);
@@ -311,9 +333,10 @@ public class FlareLane {
                 @Override
                 public void run() {
                     try {
+                        String region = com.flarelane.BaseSharedPreferences.getRegion(context);
                         String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
                         String deviceId = com.flarelane.BaseSharedPreferences.getDeviceId(context, false);
-                        InAppService.getMessage(projectId, deviceId, group, ensureData, modelInAppMessage -> {
+                        InAppService.getMessage(region, projectId, deviceId, group, ensureData, modelInAppMessage -> {
                             if (modelInAppMessage != null) {
                                 FlareLaneInAppWebViewActivity.Companion.show(context, modelInAppMessage);
                             }
@@ -363,6 +386,21 @@ public class FlareLane {
         return null;
     }
 
+    /**
+     * Region the SDK sends to: the one given to initWithContext, or "us" when none was.
+     * Hybrid WebView bridges hand it to the Web SDK alongside the projectId.
+     */
+    public static String getRegion(Context context) {
+        try {
+            String region = BaseSharedPreferences.getRegion(context);
+            if (region != null) return region;
+        } catch (Exception e) {
+            com.flarelane.BaseErrorHandler.handle(e);
+        }
+
+        return HTTPClient.DEFAULT_REGION;
+    }
+
     public static boolean isSubscribed(Context context) {
         try {
             // As cannot controlled, not check targetSdkVersion.
@@ -387,6 +425,7 @@ public class FlareLane {
             com.flarelane.BaseSharedPreferences.setPushToken(context, null);
             com.flarelane.BaseSharedPreferences.setAlreadyPermissionAsked(context, false);
             com.flarelane.BaseSharedPreferences.setProjectId(context, null);
+            com.flarelane.BaseSharedPreferences.setRegion(context, null);
 
             // Reset activation state to allow re-initialization
             isActivated = false;
@@ -500,6 +539,7 @@ public class FlareLane {
 
     private static void getPushToken(Context context, @Nullable GetPushTokenHandler handler) {
         try {
+            String region = com.flarelane.BaseSharedPreferences.getRegion(context);
             String projectId = com.flarelane.BaseSharedPreferences.getProjectId(context, false);
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !(ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)) {
@@ -507,7 +547,7 @@ public class FlareLane {
                 return;
             }
 
-            RemoteParamsManager.fetchRemoteParams(projectId, new RemoteParamsManager.ResponseHandler() {
+            RemoteParamsManager.fetchRemoteParams(region, projectId, new RemoteParamsManager.ResponseHandler() {
                 @Override
                 public void onSuccess(RemoteParams remoteParams) {
                     try {
