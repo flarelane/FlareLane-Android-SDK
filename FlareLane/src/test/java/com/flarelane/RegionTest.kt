@@ -148,7 +148,9 @@ class RegionTest {
     }
 
     @Test
-    fun `changing only the region drops the registered device`() {
+    fun `changing only the region keeps the registered device`() {
+        // A project lives in one region, so a region change alone is a misconfiguration:
+        // the release that fixes it must resume the same device, not register a second one.
         val prefs = FakePreferences()
         val context = contextWith(prefs)
         BaseSharedPreferences.setProjectId(context, "p")
@@ -157,10 +159,21 @@ class RegionTest {
 
         FlareLane.initWithContext(context, "p", "kr", false)
 
-        assertNull("the device was registered in the other region", BaseSharedPreferences.getDeviceId(context, true))
-        assertEquals("false", BaseSharedPreferences.getIsSubscribed(context, true))
+        assertEquals("d1", BaseSharedPreferences.getDeviceId(context, true))
+        assertEquals("true", BaseSharedPreferences.getIsSubscribed(context, true))
         assertEquals("kr", BaseSharedPreferences.getRegion(context))
         assertEquals("p", BaseSharedPreferences.getProjectId(context, true))
+
+        FlareLane.initWithContext(context, "p", false)
+
+        assertEquals("d1", BaseSharedPreferences.getDeviceId(context, true))
+        assertEquals("us", BaseSharedPreferences.getRegion(context))
+
+        // A projectId change still drops the device.
+        FlareLane.initWithContext(context, "p2", "kr", false)
+
+        assertNull(BaseSharedPreferences.getDeviceId(context, true))
+        assertEquals("p2", BaseSharedPreferences.getProjectId(context, true))
     }
 
     @Test

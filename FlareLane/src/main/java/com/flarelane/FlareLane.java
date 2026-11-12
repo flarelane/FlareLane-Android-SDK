@@ -73,17 +73,17 @@ public class FlareLane {
             com.flarelane.ChannelManager.createNotificationChannel(context);
 
             // If projectId is null or different, reset savedDeviceId to null.
-            // A region change counts as a different project: the device was registered in
-            // the other region, which this one has never seen. Nothing saved means the
-            // default region (installs from before the option), so upgrading keeps the device.
+            // A region change alone keeps the device: a project lives in one region, so the same
+            // projectId with another region is a misconfiguration (the wrong region answers 410).
+            // Keeping the device lets the corrected release resume it instead of registering a second one.
             String savedProjectId = com.flarelane.BaseSharedPreferences.getProjectId(context, true);
-            String savedRegion = com.flarelane.BaseSharedPreferences.getRegion(context);
-            if (savedRegion == null) savedRegion = HTTPClient.DEFAULT_REGION;
-            if (savedProjectId == null || !savedProjectId.contentEquals(projectId) || !savedRegion.equals(normalizedRegion)) {
+            if (savedProjectId == null || !savedProjectId.contentEquals(projectId)) {
                 com.flarelane.BaseSharedPreferences.setDeviceId(context, null);
                 com.flarelane.BaseSharedPreferences.setIsSubscribed(context, false);
-                com.flarelane.BaseSharedPreferences.setRegion(context, normalizedRegion);
                 com.flarelane.BaseSharedPreferences.setProjectId(context, projectId);
+            }
+            if (!normalizedRegion.equals(com.flarelane.BaseSharedPreferences.getRegion(context))) {
+                com.flarelane.BaseSharedPreferences.setRegion(context, normalizedRegion);
             }
 
             deviceRegisterOrActivate(context, () -> {
