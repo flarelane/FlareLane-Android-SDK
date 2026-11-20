@@ -71,7 +71,11 @@ public class NotificationReceivedEvent {
                         // as iOS).
                         NotificationCommunication communication = flarelaneNotification.getCommunicationData();
                         Bitmap avatar = null;
-                        if (communication != null) {
+                        // Below Android 7.0 the conversation and group paths rely on an API that does
+                        // not exist before API 23 (getActiveNotifications), so those devices always
+                        // take the plain notification path.
+                        boolean supportsStacking = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+                        if (communication != null && supportsStacking) {
                             // Tighter cap than big pictures: every retained chat message holds its
                             // own sender icon, so large avatars multiply across the history.
                             avatar = downloadBitmap(communication.senderImageUrl, MAX_AVATAR_DIMENSION);
@@ -114,7 +118,7 @@ public class NotificationReceivedEvent {
                         // Conversations opt out of group/summary: OEM shades pull shortcut-backed
                         // conversations into their own section, so the summary would orphan.
                         // Their stacking comes from the shared conversation notification id above.
-                        boolean isGrouped = threadId != null && !threadId.isEmpty() && !isConversation;
+                        boolean isGrouped = supportsStacking && threadId != null && !threadId.isEmpty() && !isConversation;
 
                         // Concurrent FCM deliveries for the same conversation must not interleave
                         // between reading the live MessagingStyle history and re-posting it, or one
@@ -140,7 +144,12 @@ public class NotificationReceivedEvent {
                             // message to the live history if the conversation is still in the shade.
                             NotificationCompat.MessagingStyle messagingStyle = null;
                             try {
-                                for (android.service.notification.StatusBarNotification sbn : notificationManager.getActiveNotifications()) {
+                                // isConversation already implies Android 7.0+; the explicit check keeps
+                                // the API 23 call provably unreachable below it.
+                                android.service.notification.StatusBarNotification[] active = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                                        ? notificationManager.getActiveNotifications()
+                                        : new android.service.notification.StatusBarNotification[0];
+                                for (android.service.notification.StatusBarNotification sbn : active) {
                                     if (sbn.getId() == conversationNotificationId) {
                                         messagingStyle = NotificationCompat.MessagingStyle
                                                 .extractMessagingStyleFromNotification(sbn.getNotification());
@@ -284,7 +293,14 @@ public class NotificationReceivedEvent {
             new java.util.concurrent.ConcurrentHashMap<>();
 
     private static java.util.concurrent.locks.ReentrantLock conversationLockFor(int conversationNotificationId) {
-        return conversationLocks.computeIfAbsent(conversationNotificationId, key -> new java.util.concurrent.locks.ReentrantLock());
+        // putIfAbsent instead of computeIfAbsent: the latter needs API 24 and java.util.function.
+        java.util.concurrent.locks.ReentrantLock lock = conversationLocks.get(conversationNotificationId);
+        if (lock == null) {
+            java.util.concurrent.locks.ReentrantLock created = new java.util.concurrent.locks.ReentrantLock();
+            lock = conversationLocks.putIfAbsent(conversationNotificationId, created);
+            if (lock == null) lock = created;
+        }
+        return lock;
     }
 
     /** Hard cap on downloaded image bytes; larger payloads fall back to a text-only notification. */

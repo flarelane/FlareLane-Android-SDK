@@ -3,6 +3,7 @@ package com.flarelane
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.flarelane.util.IntentUtil
 import kotlin.math.absoluteValue
@@ -55,6 +56,9 @@ internal object NotificationGroupManager {
      */
     @JvmStatic
     fun refreshSummary(context: Context, threadId: String, channelId: String) {
+        // Groups are never posted below Android 7.0 (see NotificationReceivedEvent), and
+        // activeNotifications does not exist before API 23.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
         try {
             val manager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -73,7 +77,7 @@ internal object NotificationGroupManager {
             }
 
             val style = NotificationCompat.InboxStyle()
-            buildSummaryLines(
+            val lines = buildSummaryLines(
                 children.map { sbn ->
                     val extras = sbn.notification.extras
                     Pair(
@@ -81,7 +85,8 @@ internal object NotificationGroupManager {
                         extras.getCharSequence(android.app.Notification.EXTRA_TEXT)
                     )
                 }
-            ).forEach { style.addLine(it) }
+            )
+            for (line in lines) style.addLine(line)
 
             val appLabel = context.applicationInfo.loadLabel(context.packageManager).toString()
 

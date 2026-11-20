@@ -10,7 +10,7 @@ import android.os.Build
 internal object IntentUtil {
     @SuppressLint("QueryPermissionsNeeded")
     fun setPackageFromResolveInfoList(context: Context, intent: Intent) {
-        context.packageManager.queryIntentActivities(intent, 0).forEach { resolveInfo ->
+        for (resolveInfo in context.packageManager.queryIntentActivities(intent, 0)) {
             if (resolveInfo.activityInfo.packageName == context.packageName) {
                 intent.setPackage(context.packageName)
                 return
@@ -47,15 +47,16 @@ internal object IntentUtil {
                                 resultIntent = intent
                             }
                         } else {
-                            context.packageManager.queryIntentActivities(
+                            val activities = context.packageManager.queryIntentActivities(
                                 intent,
                                 PackageManager.GET_RESOLVED_FILTER
-                            ).forEach run@{ resolveInfo ->
-                                resolveInfo.filter.authoritiesIterator().forEach {
-                                    if (it.host == url.host) {
+                            )
+                            for (resolveInfo in activities) {
+                                for (authority in resolveInfo.filter.authoritiesIterator()) {
+                                    if (authority.host == url.host) {
                                         intent.setPackage(resolveInfo.activityInfo.packageName)
                                         resultIntent = intent
-                                        return@run
+                                        break
                                     }
                                 }
                             }
